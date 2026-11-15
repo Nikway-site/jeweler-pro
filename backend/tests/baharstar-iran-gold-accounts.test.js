@@ -9,3 +9,6 @@ test('idempotent bank confirmation',()=>{let t=recordEvent(sample(),{key:'b1',ki
 test('reject overpayment',()=>assert.throws(()=>recordEvent(sample(),{key:'b1',kind:'bank_confirmed',amountIrr:500000001n})));
 test('trade direction and owner retained separately',()=>{const t=sample();assert.equal(t.side,'buy');assert.equal(t.owner,'fake-customer');assert.equal(t.counterparty,'fake-customer')});
 test('reversal of settled trade requires separate adjustment',()=>{const t=recordEvent(sample(),{key:'b1',kind:'bank_confirmed',amountIrr:100n});assert.throws(()=>recordEvent(t,{key:'rev',kind:'reversal'}))});
+
+test('reject same idempotency key with changed amount',()=>{const t=recordEvent(sample(),{key:'b1',kind:'bank_confirmed',amountIrr:300000000n});assert.throws(()=>recordEvent(t,{key:'b1',kind:'bank_confirmed',amountIrr:200000000n}),/IDEMPOTENCY_KEY_CONFLICT/)});
+test('reject same idempotency key with different event type',()=>{const t=recordEvent(sample(),{key:'shared',kind:'receipt_uploaded'});assert.throws(()=>recordEvent(t,{key:'shared',kind:'bank_confirmed',amountIrr:1n}),/IDEMPOTENCY_KEY_CONFLICT/)});
