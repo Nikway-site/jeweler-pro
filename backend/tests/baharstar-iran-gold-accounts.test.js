@@ -1,0 +1,11 @@
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const {createTrade,recordEvent,remainingIrr}=require('../baharstar-iran/goldAccounts');
+const sample=()=>createTrade({id:'synthetic-1',side:'buy',grossWeightG:'10.000',purity:'0.7500',priceIrrPerGram:'50000000',counterparty:'fake-customer',owner:'fake-customer'});
+test('locked trade 10g 18K and 500m IRR',()=>{const t=sample();assert.equal(t.agreedIrr,500000000n);assert.equal(t.weightMg*t.purity10000/10000n,7500n)});
+test('instruction and screenshot do not clear debt',()=>{let t=recordEvent(sample(),{key:'i1',kind:'payment_instruction'});t=recordEvent(t,{key:'r1',kind:'receipt_uploaded'});assert.equal(remainingIrr(t),500000000n)});
+test('partial bank-confirmed payments clear only confirmed amounts',()=>{let t=recordEvent(sample(),{key:'b1',kind:'bank_confirmed',amountIrr:300000000n});assert.equal(remainingIrr(t),200000000n);t=recordEvent(t,{key:'b2',kind:'bank_confirmed',amountIrr:200000000n});assert.equal(remainingIrr(t),0n)});
+test('idempotent bank confirmation',()=>{let t=recordEvent(sample(),{key:'b1',kind:'bank_confirmed',amountIrr:300000000n});t=recordEvent(t,{key:'b1',kind:'bank_confirmed',amountIrr:300000000n});assert.equal(t.clearedIrr,300000000n);assert.equal(t.events.length,2)});
+test('reject overpayment',()=>assert.throws(()=>recordEvent(sample(),{key:'b1',kind:'bank_confirmed',amountIrr:500000001n})));
+test('trade direction and owner retained separately',()=>{const t=sample();assert.equal(t.side,'buy');assert.equal(t.owner,'fake-customer');assert.equal(t.counterparty,'fake-customer')});
+test('reversal of settled trade requires separate adjustment',()=>{const t=recordEvent(sample(),{key:'b1',kind:'bank_confirmed',amountIrr:100n});assert.throws(()=>recordEvent(t,{key:'rev',kind:'reversal'}))});
