@@ -3,7 +3,7 @@ on:
   pull_request:
     paths:
       - 'backend/baharstar-iran/**'
-      - 'backend/tests/baharstar-iran-gold-accounts.test.js'
+      - 'backend/tests/baharstar-iran-*.test.js'
       - '.github/workflows/baharstar-iran-gold-accounts.yml'
   workflow_dispatch:
 permissions:
@@ -16,4 +16,4 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --test backend/tests/baharstar-iran-gold-accounts.test.js
+      - run: node --test backend/tests/baharstar-iran-gold-accounts.test.js backend/tests/baharstar-iran-ledger-bridge.test.js
