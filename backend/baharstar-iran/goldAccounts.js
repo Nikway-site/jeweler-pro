@@ -16,8 +16,12 @@ function createTrade({ id, side, grossWeightG, purity, priceIrrPerGram, counterp
 }
 function recordEvent(trade, {key,kind,amountIrr=0n}) {
   if (!key || !['payment_instruction','receipt_uploaded','bank_confirmed','reversal'].includes(kind)) throw Error('INVALID_EVENT');
-  if (trade.events.some(e=>e.key===key)) return trade;
   const value=BigInt(amountIrr);
+  const prior = trade.events.find(e=>e.key===key);
+  if (prior) {
+    if (prior.kind!==kind || BigInt(prior.amountIrr || 0n)!==value) throw Error('IDEMPOTENCY_KEY_CONFLICT');
+    return trade;
+  }
   if (value<0n) throw Error('NEGATIVE_PAYMENT');
   if (kind==='bank_confirmed' && (value<=0n || trade.clearedIrr+value>trade.agreedIrr)) throw Error('INVALID_SETTLEMENT');
   if (kind==='reversal' && (trade.clearedIrr!==0n || value!==0n)) throw Error('REVERSAL_REQUIRES_ADJUSTMENT');
