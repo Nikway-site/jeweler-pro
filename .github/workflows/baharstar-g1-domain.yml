@@ -1,0 +1,19 @@
+name: Bahar STAR G1 gold domain synthetic tests
+on:
+  pull_request:
+    paths:
+      - 'backend/tests/baharstar-g1-domain.test.js'
+      - '.github/workflows/baharstar-g1-domain.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  domain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test backend/tests/baharstar-g1-domain.test.js
