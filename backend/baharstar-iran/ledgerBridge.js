@@ -5,6 +5,8 @@
 const { remainingIrr } = require('./goldAccounts');
 function buildJournalPreview(trade) {
   if (!trade || !['buy','sell'].includes(trade.side) || !trade.id) throw Error('INVALID_TRADE');
+  // A reversal needs separate accounting lines; never reissue the original preview as active.
+  if (trade.events?.some(e=>e.kind==='reversal')) throw Error('REVERSED_TRADE_PREVIEW_BLOCKED');
   if (trade.clearedIrr < 0n || remainingIrr(trade) < 0n) throw Error('INVALID_BALANCE');
   const party = String(trade.counterparty);
   const gross = trade.agreedIrr;

@@ -22,6 +22,8 @@ function recordEvent(trade, {key,kind,amountIrr=0n}) {
     if (prior.kind!==kind || BigInt(prior.amountIrr || 0n)!==value) throw Error('IDEMPOTENCY_KEY_CONFLICT');
     return trade;
   }
+  // A cancelled trade is terminal: corrections require a new, separately tracked adjustment.
+  if (trade.events.some(e=>e.kind==='reversal')) throw Error('TRADE_REVERSED');
   if (value<0n) throw Error('NEGATIVE_PAYMENT');
   if (kind==='bank_confirmed' && (value<=0n || trade.clearedIrr+value>trade.agreedIrr)) throw Error('INVALID_SETTLEMENT');
   if (kind==='reversal' && (trade.clearedIrr!==0n || value!==0n)) throw Error('REVERSAL_REQUIRES_ADJUSTMENT');

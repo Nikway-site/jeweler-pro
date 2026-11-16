@@ -67,3 +67,17 @@ test('IR-01 F2: sale screenshot does not settle receivable', () => {
   assert.equal(retry.clearedIrr, 208000000n);
   assert.equal(retry.events.length, 3); // Agreement, screenshot, one bank confirmation.
 });
+
+
+test('IR-01 F4: synthetic reversal is terminal, replay-safe, and audit-preserving', () => {
+  const agreed = sample();
+  const reversed = recordEvent(agreed, { key: 'f4-reversal', kind: 'reversal' });
+  assert.deepEqual(agreed.events.map(e => e.kind), ['agreement']);
+  assert.deepEqual(reversed.events.map(e => e.kind), ['agreement', 'reversal']);
+  assert.equal(recordEvent(reversed, { key: 'f4-reversal', kind: 'reversal' }), reversed);
+  assert.throws(() => recordEvent(reversed, {
+    key: 'f4-bank-after-reversal', kind: 'bank_confirmed', amountIrr: 1n,
+  }), /TRADE_REVERSED/);
+  assert.throws(() => recordEvent(reversed, { key: 'f4-second-reversal', kind: 'reversal' }), /TRADE_REVERSED/);
+  assert.deepEqual(reversed.events.map(e => e.kind), ['agreement', 'reversal']);
+});

@@ -8,3 +8,10 @@ test('sell preview has distinct receivable and revenue',()=>{const p=buildJourna
 test('confirmed partial payment changes outstanding only',()=>{const t=recordEvent(trade(),{key:'bank-1',kind:'bank_confirmed',amountIrr:300000000n});const p=buildJournalPreview(t);assert.equal(p.remainingIrr,200000000n);assert.equal(p.lines[0].debit,500000000n);});
 test('IRR posting into TRY ledger is forbidden',()=>assert.throws(()=>postToJewelerProLedger(),/IRR_LEDGER_NOT_SUPPORTED/));
 test('gold ownership is not claimed by financial preview',()=>assert.equal(buildJournalPreview(trade()).goldOwnershipVerified,false));
+
+
+test('IR-01 F4: reversed trade cannot be shown as active journal preview', () => {
+  const reversed = recordEvent(trade(), { key: 'f4-reverse', kind: 'reversal' });
+  assert.throws(() => buildJournalPreview(reversed), /REVERSED_TRADE_PREVIEW_BLOCKED/);
+  assert.throws(() => postToJewelerProLedger(), /IRR_LEDGER_NOT_SUPPORTED/);
+});
