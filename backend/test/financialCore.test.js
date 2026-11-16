@@ -181,10 +181,28 @@ describe('Financial core (real MongoDB, HTTP)', { skip: !uri && 'MONGO_URI not s
       assert.equal(bal('cogs'), 56800);
       assert.equal(bal(`inventory:${BRANCH}`), 112700);
 
+      // F1 (native TRY only): sale obligation and stock issues exist before the later collection.
+      const posted = await Sale.findById(sale._id).lean();
+      const tradeJournal = await LedgerEntry.findOne({ businessId: t.businessId, _id: posted.journalEntryId }).lean();
+      assert.equal(tradeJournal?.entryType, 'sale', 'F1: sale journal is posted before final payment');
+      const originalLines = JSON.stringify(tradeJournal.lines);
+      const saleIssues = { businessId: t.businessId, movementType: 'sale', 'reference.id': String(sale._id) };
+      const issueCount = await StockMovement.countDocuments(saleIssues);
+      assert.equal(issueCount, 2, 'F1: two distinct stock issues exist before collection');
+      const journalCount = await LedgerEntry.countDocuments({ businessId: t.businessId });
+
       const pay = await t.staff.post(`/api/sales/${sale._id}/payments`, { method: 'havale', amount: '30000.00' });
       assert.equal(pay.status, 200, JSON.stringify(pay.body));
       assert.equal(pay.body.financial.paymentStatus, 'paid');
       assert.equal(pay.body.financial.balanceDue, 0);
+      assert.equal(await LedgerEntry.countDocuments({ businessId: t.businessId }), journalCount + 1,
+        'F1: later collection posts a separate journal');
+      const journalAfter = await LedgerEntry.findOne({ businessId: t.businessId, _id: posted.journalEntryId }).lean();
+      assert.equal(JSON.stringify(journalAfter.lines), originalLines, 'F1: collection does not rewrite sale journal');
+      assert.equal(await StockMovement.countDocuments(saleIssues), issueCount,
+        'F1: collection does not create another stock issue');
+      assert.equal(await stockOf(bilezik._id), 2);
+      assert.equal(await stockOf(kolye._id), 3);
       const over = await t.staff.post(`/api/sales/${sale._id}/payments`, { method: 'nakit', amount: '0.01' });
       assert.equal(over.status, 400);
       assert.equal(over.body.code, 'OVERPAYMENT');
