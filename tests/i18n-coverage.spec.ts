@@ -1,7 +1,7 @@
 /**
  * Translation coverage guard.
  *
- *  1. Every message exists in all eight languages, is non-empty and uses the
+ *  1. Every message exists in all eight released languages (and optional fa), is non-empty and uses the
  *     same {placeholders} as the Turkish source.
  *  2. Sentences are actually translated (not copied from English/Turkish).
  *  3. Every key referenced from source code exists in the catalog.
@@ -72,14 +72,24 @@ describe('message catalog', () => {
   it('defines every message in all eight languages with matching placeholders', () => {
     const problems: string[] = [];
     for (const [key, values] of entries) {
-      if (values.length !== LANGUAGES.length) problems.push(`${key}: ${values.length} languages`);
+      if (values.length < LANGUAGES.length || values.length > LANGUAGES.length + 1) problems.push(`${key}: ${values.length} languages`);
       values.forEach((value, i) => {
-        if (typeof value !== 'string' || !value.trim()) problems.push(`${key} [${LANGUAGES[i]}] is empty`);
-        if (placeholders(value) !== placeholders(values[0])) problems.push(`${key} [${LANGUAGES[i]}] placeholders differ`);
-        if (value === key) problems.push(`${key} [${LANGUAGES[i]}] equals its key`);
+        const language = [...LANGUAGES, 'fa'][i];
+        if (typeof value !== 'string' || !value.trim()) problems.push(`${key} [${language}] is empty`);
+        if (placeholders(value) !== placeholders(values[0])) problems.push(`${key} [${language}] placeholders differ`);
+        if (value === key) problems.push(`${key} [${language}] equals its key`);
       });
     }
     expect(problems).toEqual([]);
+  });
+
+  it('keeps a staged Persian slice gated until full catalog coverage', () => {
+    const staged = entries.filter(([, values]) => values.length === LANGUAGES.length + 1);
+    expect(staged.length).toBeGreaterThan(0);
+    for (const [key, values] of staged) {
+      expect(values[8], key).toMatch(/[\u0600-\u06ff]/u);
+    }
+    if (staged.length < entries.length) expect(LANGUAGES).not.toContain('fa');
   });
 
   it('translates sentences instead of copying another language', () => {
@@ -87,7 +97,7 @@ describe('message catalog', () => {
     for (const [key, v] of entries) {
       const [tr, en, ...rest] = v;
       rest.forEach((value, i) => {
-        const lang = LANGUAGES[i + 2];
+        const lang = [...LANGUAGES, 'fa'][i + 2];
         const words = value.replace(/\{\w+\}/g, '').trim();
         const sentence = words.length > 14 && /\s/.test(words) && /[a-z]{4}/.test(words);
         if (sentence && (value === en || value === tr) && !SAME_AS_SOURCE.has(`${key} [${lang}]`)) copied.push(`${key} [${lang}]`);
@@ -103,7 +113,7 @@ describe('message catalog', () => {
     for (const [key, v] of entries) {
       if (PROPER_NOUNS.has(key)) continue;
       v.slice(1).forEach((value, i) => {
-        if (/[ğşıİĞŞ]/.test(value)) leaks.push(`${key} [${LANGUAGES[i + 1]}]: ${value}`);
+        if (/[ğşıİĞŞ]/.test(value)) leaks.push(`${key} [${[...LANGUAGES, 'fa'][i + 1]}]: ${value}`);
       });
     }
     expect(leaks).toEqual([]);

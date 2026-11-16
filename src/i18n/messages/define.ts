@@ -1,12 +1,14 @@
 /**
  * Message definition helpers.
  *
- * Every message is an 8-tuple in the fixed order of LANGUAGES:
+ * The first eight slots are required, in the order of LANGUAGES:
  *   [tr, en, de, fr, es, ru, ar, zh]
- * Keeping all languages side by side makes a missing translation a type error
- * (wrong tuple length) and keeps terminology reviewable per message.
+ * A ninth, optional fa-IR slot may be reviewed incrementally in this same
+ * source tree. Persian is NOT a runtime language or generated locale until
+ * every message is translated, checked and explicitly enabled.
+ * Keeping the released languages side by side preserves existing coverage.
  */
-export type L = readonly [string, string, string, string, string, string, string, string];
+export type L = readonly [string, string, string, string, string, string, string, string, string?];
 
 export interface MessageTree {
   readonly [key: string]: L | MessageTree;

@@ -1,9 +1,9 @@
 import { defineMessages } from './define';
 
-// Order of every tuple: [tr, en, de, fr, es, ru, ar, zh]
+// First eight entries: [tr, en, de, fr, es, ru, ar, zh]. Optional ninth: staged fa-IR (not selectable).
 
 export const common = defineMessages({
-  invoice: ['Fatura', 'Invoice', 'Rechnung', 'Facture', 'Factura', 'Счёт', 'الفاتورة', '发票'],
+  invoice: ['Fatura', 'Invoice', 'Rechnung', 'Facture', 'Factura', 'Счёт', 'الفاتورة', '发票', 'فاکتور'],
   item: ['Kalem', 'Item', 'Position', 'Article', 'Artículo', 'Позиция', 'البند', '项目'],
   account: ['Hesap', 'Account', 'Konto', 'Compte', 'Cuenta', 'Счёт', 'الحساب', '账户'],
   received: ['Alınan', 'Received', 'Erhalten', 'Reçu', 'Recibido', 'Получено', 'المستلم', '已收'],
@@ -17,11 +17,11 @@ export const common = defineMessages({
   requested: ['Talep', 'Requested', 'Angefordert', 'Demandé', 'Solicitado', 'Запрошено', 'المطلوب', '申请'],
   dispatched: ['Sevk', 'Dispatched', 'Versandt', 'Expédié', 'Enviado', 'Отправлено', 'المشحون', '已发'],
   type: ['Tür', 'Type', 'Typ', 'Type', 'Tipo', 'Тип', 'النوع', '类型'],
-  save: ['Kaydet', 'Save', 'Speichern', 'Enregistrer', 'Guardar', 'Сохранить', 'حفظ', '保存'],
+  save: ['Kaydet', 'Save', 'Speichern', 'Enregistrer', 'Guardar', 'Сохранить', 'حفظ', '保存', 'ذخیره'],
   saveChanges: ['Değişiklikleri kaydet', 'Save changes', 'Änderungen speichern', 'Enregistrer les modifications', 'Guardar cambios', 'Сохранить изменения', 'حفظ التغييرات', '保存更改'],
-  cancel: ['İptal', 'Cancel', 'Abbrechen', 'Annuler', 'Cancelar', 'Отмена', 'إلغاء', '取消'],
-  confirm: ['Onayla', 'Confirm', 'Bestätigen', 'Confirmer', 'Confirmar', 'Подтвердить', 'تأكيد', '确认'],
-  close: ['Kapat', 'Close', 'Schließen', 'Fermer', 'Cerrar', 'Закрыть', 'إغلاق', '关闭'],
+  cancel: ['İptal', 'Cancel', 'Abbrechen', 'Annuler', 'Cancelar', 'Отмена', 'إلغاء', '取消', 'لغو'],
+  confirm: ['Onayla', 'Confirm', 'Bestätigen', 'Confirmer', 'Confirmar', 'Подтвердить', 'تأكيد', '确认', 'تأیید'],
+  close: ['Kapat', 'Close', 'Schließen', 'Fermer', 'Cerrar', 'Закрыть', 'إغلاق', '关闭', 'بستن'],
   dismiss: ['Bildirimi kapat', 'Dismiss notification', 'Benachrichtigung schließen', 'Fermer la notification', 'Cerrar notificación', 'Закрыть уведомление', 'إغلاق الإشعار', '关闭通知'],
   clear: ['Temizle', 'Clear', 'Leeren', 'Effacer', 'Borrar', 'Очистить', 'مسح', '清除'],
   refresh: ['Yenile', 'Refresh', 'Aktualisieren', 'Actualiser', 'Actualizar', 'Обновить', 'تحديث', '刷新'],
@@ -29,7 +29,7 @@ export const common = defineMessages({
   delete: ['Sil', 'Delete', 'Löschen', 'Supprimer', 'Eliminar', 'Удалить', 'حذف', '删除'],
   add: ['Ekle', 'Add', 'Hinzufügen', 'Ajouter', 'Añadir', 'Добавить', 'إضافة', '添加'],
   remove: ['Kaldır', 'Remove', 'Entfernen', 'Retirer', 'Quitar', 'Убрать', 'إزالة', '移除'],
-  search: ['Ara', 'Search', 'Suchen', 'Rechercher', 'Buscar', 'Поиск', 'بحث', '搜索'],
+  search: ['Ara', 'Search', 'Suchen', 'Rechercher', 'Buscar', 'Поиск', 'بحث', '搜索', 'جست‌وجو'],
   filter: ['Filtrele', 'Filter', 'Filtern', 'Filtrer', 'Filtrar', 'Фильтр', 'تصفية', '筛选'],
   all: ['Tümü', 'All', 'Alle', 'Tous', 'Todos', 'Все', 'الكل', '全部'],
   yes: ['Evet', 'Yes', 'Ja', 'Oui', 'Sí', 'Да', 'نعم', '是'],
@@ -40,10 +40,10 @@ export const common = defineMessages({
   details: ['Detaylar', 'Details', 'Details', 'Détails', 'Detalles', 'Подробности', 'التفاصيل', '详情'],
   actions: ['İşlemler', 'Actions', 'Aktionen', 'Actions', 'Acciones', 'Действия', 'الإجراءات', '操作'],
   status: ['Durum', 'Status', 'Status', 'Statut', 'Estado', 'Статус', 'الحالة', '状态'],
-  date: ['Tarih', 'Date', 'Datum', 'Date', 'Fecha', 'Дата', 'التاريخ', '日期'],
+  date: ['Tarih', 'Date', 'Datum', 'Date', 'Fecha', 'Дата', 'التاريخ', '日期', 'تاریخ'],
   time: ['Saat', 'Time', 'Uhrzeit', 'Heure', 'Hora', 'Время', 'الوقت', '时间'],
   total: ['Toplam', 'Total', 'Summe', 'Total', 'Total', 'Итого', 'الإجمالي', '合计'],
-  amount: ['Tutar', 'Amount', 'Betrag', 'Montant', 'Importe', 'Сумма', 'المبلغ', '金额'],
+  amount: ['Tutar', 'Amount', 'Betrag', 'Montant', 'Importe', 'Сумма', 'المبلغ', '金额', 'مبلغ'],
   quantity: ['Adet', 'Quantity', 'Menge', 'Quantité', 'Cantidad', 'Количество', 'الكمية', '数量'],
   price: ['Fiyat', 'Price', 'Preis', 'Prix', 'Precio', 'Цена', 'السعر', '价格'],
   name: ['Ad', 'Name', 'Name', 'Nom', 'Nombre', 'Название', 'الاسم', '名称'],
@@ -54,7 +54,7 @@ export const common = defineMessages({
   product: ['Ürün', 'Product', 'Produkt', 'Produit', 'Producto', 'Товар', 'المنتج', '产品'],
   supplier: ['Tedarikçi', 'Supplier', 'Lieferant', 'Fournisseur', 'Proveedor', 'Поставщик', 'المورد', '供应商'],
   loading: ['Yükleniyor…', 'Loading…', 'Wird geladen…', 'Chargement…', 'Cargando…', 'Загрузка…', 'جارٍ التحميل…', '加载中…'],
-  noData: ['Kayıt bulunamadı.', 'No records found.', 'Keine Einträge gefunden.', 'Aucun enregistrement.', 'No se encontraron registros.', 'Записи не найдены.', 'لا توجد سجلات.', '未找到记录。'],
+  noData: ['Kayıt bulunamadı.', 'No records found.', 'Keine Einträge gefunden.', 'Aucun enregistrement.', 'No se encontraron registros.', 'Записи не найдены.', 'لا توجد سجلات.', '未找到记录。', 'هیچ رکوردی یافت نشد.'],
   noResults: ['Aramanızla eşleşen kayıt yok.', 'Nothing matches your search.', 'Keine Treffer für Ihre Suche.', 'Aucun résultat pour cette recherche.', 'Nada coincide con su búsqueda.', 'Ничего не найдено.', 'لا توجد نتائج مطابقة.', '没有匹配的结果。'],
   required: ['Zorunlu alan', 'Required field', 'Pflichtfeld', 'Champ obligatoire', 'Campo obligatorio', 'Обязательное поле', 'حقل مطلوب', '必填项'],
   optional: ['İsteğe bağlı', 'Optional', 'Optional', 'Facultatif', 'Opcional', 'Необязательно', 'اختياري', '可选'],
