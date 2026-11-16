@@ -403,11 +403,21 @@ describe('Financial core (real MongoDB, HTTP)', { skip: !uri && 'MONGO_URI not s
       const p = await product(t.admin, { name: 'Tek', price: '500.00', stock: 10 });
       const c = await customer(t.admin);
       const body = { customerId: c._id, lines: [{ productId: p._id, quantity: 1 }], payments: [{ method: 'nakit', amount: '500.00' }] };
+      // F6: inspect actual MongoDB journal/stock writes, not only HTTP replay and stock totals.
+      const postedCounts = async () => ({
+        journal: await LedgerEntry.countDocuments({ businessId: t.businessId }),
+        movements: await StockMovement.countDocuments({ businessId: t.businessId }),
+      });
+      const beforeFirst = await postedCounts();
       const key = `sale-${uid()}-key`;
       const first = await t.staff.post('/api/sales', body, { 'Idempotency-Key': key });
-      const retry = await t.staff.post('/api/sales', body, { 'Idempotency-Key': key });
       assert.equal(first.status, 201);
+      const afterFirst = await postedCounts();
+      assert.ok(afterFirst.journal > beforeFirst.journal, 'F6: sale posts financial journal');
+      assert.equal(afterFirst.movements, beforeFirst.movements + 1, 'F6: one stock movement for one sale');
+      const retry = await t.staff.post('/api/sales', body, { 'Idempotency-Key': key });
       assert.equal(retry.status, 201);
+      assert.deepEqual(await postedCounts(), afterFirst, 'F6: sale replay must not post another journal or movement');
       assert.equal(retry.headers['idempotent-replayed'], 'true');
       assert.equal(retry.body._id, first.body._id);
       assert.equal(await stockOf(p._id), 9);
@@ -417,17 +427,28 @@ describe('Financial core (real MongoDB, HTTP)', { skip: !uri && 'MONGO_URI not s
       assert.ok(parallel.every((r) => r.status === 201), parallel.map((r) => `${r.status}:${r.body?.code}`).join(','));
       assert.equal(new Set(parallel.map((r) => r.body._id)).size, 1, 'one sale for six parallel duplicates');
       assert.equal(await stockOf(p._id), 8);
+      const afterParallel = await postedCounts();
+      assert.ok(afterParallel.journal > afterFirst.journal, 'F6: second distinct sale posts journal');
+      assert.equal(afterParallel.movements, afterFirst.movements + 1, 'F6: six parallel requests post one stock movement');
 
       const reuse = await t.staff.post('/api/sales', { ...body, lines: [{ productId: p._id, quantity: 2 }] }, { 'Idempotency-Key': key });
       assert.equal(reuse.status, 422);
       assert.equal(reuse.body.code, 'IDEMPOTENCY_KEY_REUSED');
       assert.equal((await t.staff.post('/api/sales', body, { 'Idempotency-Key': 'short' })).status, 400);
+      assert.deepEqual(await postedCounts(), afterParallel, 'F6: rejected key reuse must not change books or stock');
 
       const open = await mustCreate(await t.staff.post('/api/sales', { ...body, payments: [] }), 'open sale');
       const payKey = `pay-${uid()}-key`;
-      for (let i = 0; i < 3; i += 1) {
-        assert.equal((await t.staff.post(`/api/sales/${open._id}/payments`, { method: 'nakit', amount: '100.00' }, { 'Idempotency-Key': payKey })).status, 200);
+      const payment = { method: 'nakit', amount: '100.00' };
+      const beforePayment = await postedCounts();
+      assert.equal((await t.staff.post(`/api/sales/${open._id}/payments`, payment, { 'Idempotency-Key': payKey })).status, 200);
+      const afterPayment = await postedCounts();
+      assert.ok(afterPayment.journal > beforePayment.journal, 'F6: first payment posts a journal entry');
+      assert.equal(afterPayment.movements, beforePayment.movements, 'F6: cash settlement cannot move product stock');
+      for (let i = 0; i < 2; i += 1) {
+        assert.equal((await t.staff.post(`/api/sales/${open._id}/payments`, payment, { 'Idempotency-Key': payKey })).status, 200);
       }
+      assert.deepEqual(await postedCounts(), afterPayment, 'F6: payment replay must not post another journal or stock movement');
       assert.equal((await Sale.findById(open._id).lean()).paidMinor, 10000, 'payment applied once');
       await assertReconciled(t.admin, 'idempotency');
     });
