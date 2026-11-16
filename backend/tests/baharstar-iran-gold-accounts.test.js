@@ -43,3 +43,27 @@ test('IR-01 F3: synthetic customer and wholesaler trades stay separate', () => {
   assert.equal(remainingIrr(wholesaleSell), 510000000n);
   assert.equal(wholesaleSell.events.length, 1); // No settlement leaked between trades.
 });
+
+
+test('IR-01 F2: sale screenshot does not settle receivable', () => {
+  // Synthetic agreed price: 4.000 g × 52,000,000 IRR/g = 208,000,000 IRR.
+  const sale = createTrade({
+    id: 'synthetic-f2-sale', side: 'sell', grossWeightG: '4.000',
+    purity: '0.7500', priceIrrPerGram: '52000000',
+    counterparty: 'fake-buyer-f2', owner: 'fake-shop',
+  });
+  assert.equal(sale.agreedIrr, 208000000n);
+  assert.equal(remainingIrr(sale), 208000000n);
+  const screenshot = recordEvent(sale, { key: 'f2-screenshot', kind: 'receipt_uploaded' });
+  assert.equal(screenshot.clearedIrr, 0n);
+  assert.equal(remainingIrr(screenshot), 208000000n);
+  const confirmed = recordEvent(screenshot, {
+    key: 'f2-bank-confirmed', kind: 'bank_confirmed', amountIrr: 208000000n,
+  });
+  assert.equal(remainingIrr(confirmed), 0n);
+  const retry = recordEvent(confirmed, {
+    key: 'f2-bank-confirmed', kind: 'bank_confirmed', amountIrr: 208000000n,
+  });
+  assert.equal(retry.clearedIrr, 208000000n);
+  assert.equal(retry.events.length, 3); // Agreement, screenshot, one bank confirmation.
+});
