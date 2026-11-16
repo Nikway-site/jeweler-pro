@@ -181,10 +181,28 @@ describe('Financial core (real MongoDB, HTTP)', { skip: !uri && 'MONGO_URI not s
       assert.equal(bal('cogs'), 56800);
       assert.equal(bal(`inventory:${BRANCH}`), 112700);
 
+      // F1 (native TRY only): sale obligation and stock issues exist before the later collection.
+      const posted = await Sale.findById(sale._id).lean();
+      const tradeJournal = await LedgerEntry.findOne({ businessId: t.businessId, _id: posted.journalEntryId }).lean();
+      assert.equal(tradeJournal?.entryType, 'sale', 'F1: sale journal is posted before final payment');
+      const originalLines = JSON.stringify(tradeJournal.lines);
+      const saleIssues = { businessId: t.businessId, movementType: 'sale', 'reference.id': String(sale._id) };
+      const issueCount = await StockMovement.countDocuments(saleIssues);
+      assert.equal(issueCount, 2, 'F1: two distinct stock issues exist before collection');
+      const journalCount = await LedgerEntry.countDocuments({ businessId: t.businessId });
+
       const pay = await t.staff.post(`/api/sales/${sale._id}/payments`, { method: 'havale', amount: '30000.00' });
       assert.equal(pay.status, 200, JSON.stringify(pay.body));
       assert.equal(pay.body.financial.paymentStatus, 'paid');
       assert.equal(pay.body.financial.balanceDue, 0);
+      assert.equal(await LedgerEntry.countDocuments({ businessId: t.businessId }), journalCount + 1,
+        'F1: later collection posts a separate journal');
+      const journalAfter = await LedgerEntry.findOne({ businessId: t.businessId, _id: posted.journalEntryId }).lean();
+      assert.equal(JSON.stringify(journalAfter.lines), originalLines, 'F1: collection does not rewrite sale journal');
+      assert.equal(await StockMovement.countDocuments(saleIssues), issueCount,
+        'F1: collection does not create another stock issue');
+      assert.equal(await stockOf(bilezik._id), 2);
+      assert.equal(await stockOf(kolye._id), 3);
       const over = await t.staff.post(`/api/sales/${sale._id}/payments`, { method: 'nakit', amount: '0.01' });
       assert.equal(over.status, 400);
       assert.equal(over.body.code, 'OVERPAYMENT');
@@ -249,12 +267,38 @@ describe('Financial core (real MongoDB, HTTP)', { skip: !uri && 'MONGO_URI not s
       assert.equal(collection.status, 201, JSON.stringify(collection.body));
       assert.deepEqual(collection.body.allocations, [{ saleId: sale._id, amountMinor: 20000 }], 'FIFO allocation to the open sale');
       assert.equal((await Sale.findById(sale._id).lean()).balanceDueMinor, 100000);
+      // F4: capture native TRY journal/stock originals before cancellation.
+      const postedSale = await Sale.findById(sale._id).lean();
+      const original = await LedgerEntry.findOne({ businessId: t.businessId, _id: postedSale.journalEntryId }).lean();
+      assert.ok(original, 'F4: the original sale journal must exist');
+      const originalLines = JSON.stringify(original.lines);
+      const soldMovement = await StockMovement.findOne({
+        businessId: t.businessId, productId: p._id, movementType: 'sale', 'reference.id': String(sale._id),
+      }).lean();
+      assert.equal(soldMovement?.quantity, -2, 'F4: original stock issue stays recorded');
 
       const cancelled = await t.manager.del(`/api/sales/${sale._id}`);
       assert.equal(cancelled.status, 200, JSON.stringify(cancelled.body));
       assert.equal(cancelled.body.data.status, 'cancelled');
       assert.equal(await stockOf(p._id), 2);
       assert.equal((await Customer.findById(c._id).lean()).balanceTry, 200, 'the on-account collection remains as credit');
+      const originalAfter = await LedgerEntry.findOne({ businessId: t.businessId, _id: original._id }).lean();
+      assert.equal(JSON.stringify(originalAfter.lines), originalLines, 'F4: cancellation cannot rewrite original lines');
+      const reversal = await LedgerEntry.findOne({
+        businessId: t.businessId, entryType: 'sale_cancel', reversalOf: original._id,
+      }).lean();
+      assert.ok(reversal, 'F4: cancellation creates a linked reversing journal');
+      assert.equal(String(originalAfter.reversedBy), String(reversal._id), 'F4: reversal link is bidirectional');
+      assert.deepEqual(
+        reversal.lines.map(({ account, unit, debit, credit }) => ({ account, unit, debit, credit })),
+        original.lines.map(({ account, unit, debit, credit }) => ({ account, unit, debit: credit, credit: debit })),
+        'F4: reversing entry must mirror all original debit/credit amounts',
+      );
+      const restored = await StockMovement.findOne({
+        businessId: t.businessId, productId: p._id, movementType: 'sale_cancel', 'reference.id': String(sale._id),
+      }).lean();
+      assert.equal(restored?.quantity, 2, 'F4: stock return is a new movement, not deletion of the sale issue');
+      assert.ok(await StockMovement.exists({ businessId: t.businessId, _id: soldMovement._id }), 'F4: original issue remains');
       const bal = await balances(t.admin);
       assert.equal(bal(`cash:${BRANCH}`), 200, '500 refunded, 200 account collection kept');
       assert.equal(bal(`bank:${BRANCH}:card`), 0);
@@ -403,11 +447,21 @@ describe('Financial core (real MongoDB, HTTP)', { skip: !uri && 'MONGO_URI not s
       const p = await product(t.admin, { name: 'Tek', price: '500.00', stock: 10 });
       const c = await customer(t.admin);
       const body = { customerId: c._id, lines: [{ productId: p._id, quantity: 1 }], payments: [{ method: 'nakit', amount: '500.00' }] };
+      // F6: inspect actual MongoDB journal/stock writes, not only HTTP replay and stock totals.
+      const postedCounts = async () => ({
+        journal: await LedgerEntry.countDocuments({ businessId: t.businessId }),
+        movements: await StockMovement.countDocuments({ businessId: t.businessId }),
+      });
+      const beforeFirst = await postedCounts();
       const key = `sale-${uid()}-key`;
       const first = await t.staff.post('/api/sales', body, { 'Idempotency-Key': key });
-      const retry = await t.staff.post('/api/sales', body, { 'Idempotency-Key': key });
       assert.equal(first.status, 201);
+      const afterFirst = await postedCounts();
+      assert.ok(afterFirst.journal > beforeFirst.journal, 'F6: sale posts financial journal');
+      assert.equal(afterFirst.movements, beforeFirst.movements + 1, 'F6: one stock movement for one sale');
+      const retry = await t.staff.post('/api/sales', body, { 'Idempotency-Key': key });
       assert.equal(retry.status, 201);
+      assert.deepEqual(await postedCounts(), afterFirst, 'F6: sale replay must not post another journal or movement');
       assert.equal(retry.headers['idempotent-replayed'], 'true');
       assert.equal(retry.body._id, first.body._id);
       assert.equal(await stockOf(p._id), 9);
@@ -417,17 +471,28 @@ describe('Financial core (real MongoDB, HTTP)', { skip: !uri && 'MONGO_URI not s
       assert.ok(parallel.every((r) => r.status === 201), parallel.map((r) => `${r.status}:${r.body?.code}`).join(','));
       assert.equal(new Set(parallel.map((r) => r.body._id)).size, 1, 'one sale for six parallel duplicates');
       assert.equal(await stockOf(p._id), 8);
+      const afterParallel = await postedCounts();
+      assert.ok(afterParallel.journal > afterFirst.journal, 'F6: second distinct sale posts journal');
+      assert.equal(afterParallel.movements, afterFirst.movements + 1, 'F6: six parallel requests post one stock movement');
 
       const reuse = await t.staff.post('/api/sales', { ...body, lines: [{ productId: p._id, quantity: 2 }] }, { 'Idempotency-Key': key });
       assert.equal(reuse.status, 422);
       assert.equal(reuse.body.code, 'IDEMPOTENCY_KEY_REUSED');
       assert.equal((await t.staff.post('/api/sales', body, { 'Idempotency-Key': 'short' })).status, 400);
+      assert.deepEqual(await postedCounts(), afterParallel, 'F6: rejected key reuse must not change books or stock');
 
       const open = await mustCreate(await t.staff.post('/api/sales', { ...body, payments: [] }), 'open sale');
       const payKey = `pay-${uid()}-key`;
-      for (let i = 0; i < 3; i += 1) {
-        assert.equal((await t.staff.post(`/api/sales/${open._id}/payments`, { method: 'nakit', amount: '100.00' }, { 'Idempotency-Key': payKey })).status, 200);
+      const payment = { method: 'nakit', amount: '100.00' };
+      const beforePayment = await postedCounts();
+      assert.equal((await t.staff.post(`/api/sales/${open._id}/payments`, payment, { 'Idempotency-Key': payKey })).status, 200);
+      const afterPayment = await postedCounts();
+      assert.ok(afterPayment.journal > beforePayment.journal, 'F6: first payment posts a journal entry');
+      assert.equal(afterPayment.movements, beforePayment.movements, 'F6: cash settlement cannot move product stock');
+      for (let i = 0; i < 2; i += 1) {
+        assert.equal((await t.staff.post(`/api/sales/${open._id}/payments`, payment, { 'Idempotency-Key': payKey })).status, 200);
       }
+      assert.deepEqual(await postedCounts(), afterPayment, 'F6: payment replay must not post another journal or stock movement');
       assert.equal((await Sale.findById(open._id).lean()).paidMinor, 10000, 'payment applied once');
       await assertReconciled(t.admin, 'idempotency');
     });
