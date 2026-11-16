@@ -249,12 +249,38 @@ describe('Financial core (real MongoDB, HTTP)', { skip: !uri && 'MONGO_URI not s
       assert.equal(collection.status, 201, JSON.stringify(collection.body));
       assert.deepEqual(collection.body.allocations, [{ saleId: sale._id, amountMinor: 20000 }], 'FIFO allocation to the open sale');
       assert.equal((await Sale.findById(sale._id).lean()).balanceDueMinor, 100000);
+      // F4: capture native TRY journal/stock originals before cancellation.
+      const postedSale = await Sale.findById(sale._id).lean();
+      const original = await LedgerEntry.findOne({ businessId: t.businessId, _id: postedSale.journalEntryId }).lean();
+      assert.ok(original, 'F4: the original sale journal must exist');
+      const originalLines = JSON.stringify(original.lines);
+      const soldMovement = await StockMovement.findOne({
+        businessId: t.businessId, productId: p._id, movementType: 'sale', 'reference.id': String(sale._id),
+      }).lean();
+      assert.equal(soldMovement?.quantity, -2, 'F4: original stock issue stays recorded');
 
       const cancelled = await t.manager.del(`/api/sales/${sale._id}`);
       assert.equal(cancelled.status, 200, JSON.stringify(cancelled.body));
       assert.equal(cancelled.body.data.status, 'cancelled');
       assert.equal(await stockOf(p._id), 2);
       assert.equal((await Customer.findById(c._id).lean()).balanceTry, 200, 'the on-account collection remains as credit');
+      const originalAfter = await LedgerEntry.findOne({ businessId: t.businessId, _id: original._id }).lean();
+      assert.equal(JSON.stringify(originalAfter.lines), originalLines, 'F4: cancellation cannot rewrite original lines');
+      const reversal = await LedgerEntry.findOne({
+        businessId: t.businessId, entryType: 'sale_cancel', reversalOf: original._id,
+      }).lean();
+      assert.ok(reversal, 'F4: cancellation creates a linked reversing journal');
+      assert.equal(String(originalAfter.reversedBy), String(reversal._id), 'F4: reversal link is bidirectional');
+      assert.deepEqual(
+        reversal.lines.map(({ account, unit, debit, credit }) => ({ account, unit, debit, credit })),
+        original.lines.map(({ account, unit, debit, credit }) => ({ account, unit, debit: credit, credit: debit })),
+        'F4: reversing entry must mirror all original debit/credit amounts',
+      );
+      const restored = await StockMovement.findOne({
+        businessId: t.businessId, productId: p._id, movementType: 'sale_cancel', 'reference.id': String(sale._id),
+      }).lean();
+      assert.equal(restored?.quantity, 2, 'F4: stock return is a new movement, not deletion of the sale issue');
+      assert.ok(await StockMovement.exists({ businessId: t.businessId, _id: soldMovement._id }), 'F4: original issue remains');
       const bal = await balances(t.admin);
       assert.equal(bal(`cash:${BRANCH}`), 200, '500 refunded, 200 account collection kept');
       assert.equal(bal(`bank:${BRANCH}:card`), 0);
