@@ -12,3 +12,34 @@ test('reversal of settled trade requires separate adjustment',()=>{const t=recor
 
 test('reject same idempotency key with changed amount',()=>{const t=recordEvent(sample(),{key:'b1',kind:'bank_confirmed',amountIrr:300000000n});assert.throws(()=>recordEvent(t,{key:'b1',kind:'bank_confirmed',amountIrr:200000000n}),/IDEMPOTENCY_KEY_CONFLICT/)});
 test('reject same idempotency key with different event type',()=>{const t=recordEvent(sample(),{key:'shared',kind:'receipt_uploaded'});assert.throws(()=>recordEvent(t,{key:'shared',kind:'bank_confirmed',amountIrr:1n}),/IDEMPOTENCY_KEY_CONFLICT/)});
+
+
+const { resolvePurity, fineWeightMg } = require('../domain/metals');
+
+test('IR-01 F5: Iran adapter 18K purity agrees with Jeweler Pro metal core', () => {
+  const trade = sample();
+  const actualPurity = resolvePurity({ karat: 18 });
+  assert.equal(actualPurity, 7500n);
+  assert.equal(trade.purity10000, actualPurity);
+  assert.equal(fineWeightMg(trade.weightMg, actualPurity), 7500n);
+  assert.equal(trade.agreedIrr, 500000000n); // Synthetic agreed rate per gross gram, not a live quote.
+});
+
+test('IR-01 F3: synthetic customer and wholesaler trades stay separate', () => {
+  const customerBuy = sample();
+  const wholesaleSell = createTrade({
+    id: 'synthetic-wholesale-1', side: 'sell', grossWeightG: '10.000',
+    purity: '0.7500', priceIrrPerGram: '51000000',
+    counterparty: 'fake-wholesaler', owner: 'fake-shop',
+  });
+  const paidCustomer = recordEvent(customerBuy, {
+    key: 'bank-customer-1', kind: 'bank_confirmed', amountIrr: 300000000n,
+  });
+  assert.notEqual(customerBuy.id, wholesaleSell.id);
+  assert.notEqual(customerBuy.counterparty, wholesaleSell.counterparty);
+  assert.equal(customerBuy.agreedIrr, 500000000n);
+  assert.equal(wholesaleSell.agreedIrr, 510000000n);
+  assert.equal(remainingIrr(paidCustomer), 200000000n);
+  assert.equal(remainingIrr(wholesaleSell), 510000000n);
+  assert.equal(wholesaleSell.events.length, 1); // No settlement leaked between trades.
+});
