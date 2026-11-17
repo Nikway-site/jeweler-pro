@@ -85,12 +85,12 @@ export const common = defineMessages({
 
 export const shell = defineMessages({
   caption: ['Kurumsal ERP', 'Enterprise ERP', 'Unternehmens-ERP', 'ERP d’entreprise', 'ERP empresarial', 'Корпоративная ERP', 'نظام ERP للمؤسسات', '企业 ERP'],
-  workspace: ['Çalışma alanı', 'Workspace', 'Arbeitsbereich', 'Espace de travail', 'Espacio de trabajo', 'Рабочая область', 'مساحة العمل', '工作区'],
-  logout: ['Çıkış yap', 'Sign out', 'Abmelden', 'Se déconnecter', 'Cerrar sesión', 'Выйти', 'تسجيل الخروج', '退出登录'],
-  newSale: ['Yeni satış', 'New sale', 'Neuer Verkauf', 'Nouvelle vente', 'Nueva venta', 'Новая продажа', 'بيع جديد', '新建销售'],
-  switchToLight: ['Açık görünüme geç', 'Switch to light appearance', 'Zur hellen Darstellung wechseln', 'Passer en mode clair', 'Cambiar a modo claro', 'Светлое оформление', 'التبديل إلى المظهر الفاتح', '切换到浅色外观'],
-  switchToDark: ['Koyu görünüme geç', 'Switch to dark appearance', 'Zur dunklen Darstellung wechseln', 'Passer en mode sombre', 'Cambiar a modo oscuro', 'Тёмное оформление', 'التبديل إلى المظهر الداكن', '切换到深色外观'],
-  skipToContent: ['İçeriğe geç', 'Skip to content', 'Zum Inhalt springen', 'Aller au contenu', 'Ir al contenido', 'Перейти к содержимому', 'انتقل إلى المحتوى', '跳到内容'],
+  workspace: ['Çalışma alanı', 'Workspace', 'Arbeitsbereich', 'Espace de travail', 'Espacio de trabajo', 'Рабочая область', 'مساحة العمل', '工作区', 'فضای کاری'],
+  logout: ['Çıkış yap', 'Sign out', 'Abmelden', 'Se déconnecter', 'Cerrar sesión', 'Выйти', 'تسجيل الخروج', '退出登录', 'خروج از حساب'],
+  newSale: ['Yeni satış', 'New sale', 'Neuer Verkauf', 'Nouvelle vente', 'Nueva venta', 'Новая продажа', 'بيع جديد', '新建销售', 'فروش جدید'],
+  switchToLight: ['Açık görünüme geç', 'Switch to light appearance', 'Zur hellen Darstellung wechseln', 'Passer en mode clair', 'Cambiar a modo claro', 'Светлое оформление', 'التبديل إلى المظهر الفاتح', '切换到浅色外观', 'تغییر به حالت روشن'],
+  switchToDark: ['Koyu görünüme geç', 'Switch to dark appearance', 'Zur dunklen Darstellung wechseln', 'Passer en mode sombre', 'Cambiar a modo oscuro', 'Тёмное оформление', 'التبديل إلى المظهر الداكن', '切换到深色外观', 'تغییر به حالت تیره'],
+  skipToContent: ['İçeriğe geç', 'Skip to content', 'Zum Inhalt springen', 'Aller au contenu', 'Ir al contenido', 'Перейти к содержимому', 'انتقل إلى المحتوى', '跳到内容', 'رفتن به محتوای اصلی'],
 });
 
 export const nav = defineMessages({
