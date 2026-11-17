@@ -130,6 +130,49 @@ describe('Financial core (real MongoDB, HTTP)', { skip: !uri && 'MONGO_URI not s
 
   // ===================================================================
   describe('Sales lifecycle', () => {
+    it('Bahar STAR IR-01 F2: screenshot-only transfer must not clear the books', async () => {
+      const t = await tenant();
+      // Native engine uses TRY, not IRR. Synthetic 2080.00 TRY = 208000 kuruş;
+      // this probes F2 settlement semantics, NOT Iran's 208,000,000 IRR fixture.
+      const p = await product(t.admin, { name: 'Synthetic F2 stock', price: '2080.00', costPrice: '800.00', stock: 1 });
+      const c = await customer(t.admin);
+      const sale = await mustCreate(await t.staff.post('/api/sales', {
+        customerId: c._id, lines: [{ productId: p._id, quantity: 1 }], payments: [],
+      }), 'F2 unpaid sale');
+      assert.equal(sale.financial.balanceDue, 2080);
+      assert.equal(sale.financial.paymentStatus, 'unpaid');
+      assert.equal(await stockOf(p._id), 0, 'only the sale changes inventory');
+
+      // Screenshot is synthetic, not proof of cleared funds. An unconfirmed
+      // transfer instruction must NOT post a collection or clear receivables.
+      const attempted = await t.staff.post(`/api/sales/${sale._id}/payments`, {
+        method: 'havale', amount: '2080.00',
+        receiptScreenshot: 'synthetic-unverified-receipt', bankConfirmed: false,
+      });
+      const stored = await Sale.findById(sale._id).lean();
+      const bal = await balances(t.admin);
+      const paymentJournalCount = await LedgerEntry.countDocuments({
+        businessId: t.businessId, entryType: 'sale_payment', 'reference.id': String(sale._id),
+      });
+      await assertReconciled(t.admin, 'F2 unconfirmed transfer');
+      // Independent expected state: open 2080.00 TRY receivable; no payment
+      // ledger or second stock move. The diff exposes the observed gap.
+      assert.deepEqual({
+        balanceDueMinor: stored.balanceDueMinor,
+        paymentStatus: stored.paymentStatus,
+        paymentCount: (stored.payments || []).length,
+        receivableTry: bal(`ar:${c._id}`),
+        bankTransferTry: bal(`bank:${BRANCH}:transfer`),
+        paymentJournalCount,
+        stock: await stockOf(p._id),
+      }, {
+        balanceDueMinor: 208000, paymentStatus: 'unpaid', paymentCount: 0,
+        receivableTry: 2080, bankTransferTry: 0, paymentJournalCount: 0, stock: 0,
+      }, 'a screenshot must not be treated as bank settlement');
+      assert.ok([400, 409].includes(attempted.status),
+        `unconfirmed payment must fail closed, received HTTP ${attempted.status}`);
+    });
+
     it('multi-line gram + fixed sale: exact prices, discounts, split partial payment, stock, COGS, receivable, collection', async () => {
       const t = await tenant();
       const bilezik = await product(t.admin, {
