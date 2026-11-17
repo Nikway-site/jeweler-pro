@@ -76,7 +76,9 @@ jobs:
       - name: Run tests with coverage thresholds
         working-directory: backend
         # scripts/runTests.js starts a throw-away replica set (mongodb-memory-server).
-        run: npm run test:coverage | tee coverage.txt
+        run: |
+          set -o pipefail
+          npm run test:coverage | tee coverage.txt
       - name: Coverage summary
         if: always()
         working-directory: backend
