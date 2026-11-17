@@ -362,10 +362,10 @@ export const purity = defineMessages({
 });
 
 export const payment = defineMessages({
-  cash: ['Nakit', 'Cash', 'Bar', 'Espèces', 'Efectivo', 'Наличные', 'نقداً', '现金'],
-  card: ['Kredi kartı', 'Credit card', 'Kreditkarte', 'Carte bancaire', 'Tarjeta de crédito', 'Банковская карта', 'بطاقة ائتمان', '信用卡'],
-  transfer: ['Havale / EFT', 'Bank transfer', 'Überweisung', 'Virement', 'Transferencia', 'Банковский перевод', 'حوالة بنكية', '银行转账'],
-  account: ['Veresiye (cari)', 'On account', 'Auf Rechnung', 'Sur compte', 'A cuenta', 'В долг (на счёт)', 'على الحساب', '记账'],
-  mixed: ['Karma', 'Mixed', 'Gemischt', 'Mixte', 'Mixto', 'Смешанная', 'مختلط', '混合'],
-  gold: ['Altın', 'Gold', 'Gold', 'Or', 'Oro', 'Золото', 'ذهب', '黄金'],
+  cash: ['Nakit', 'Cash', 'Bar', 'Espèces', 'Efectivo', 'Наличные', 'نقداً', '现金', 'نقدی'],
+  card: ['Kredi kartı', 'Credit card', 'Kreditkarte', 'Carte bancaire', 'Tarjeta de crédito', 'Банковская карта', 'بطاقة ائتمان', '信用卡', 'کارت اعتباری'],
+  transfer: ['Havale / EFT', 'Bank transfer', 'Überweisung', 'Virement', 'Transferencia', 'Банковский перевод', 'حوالة بنكية', '银行转账', 'حواله بانکی'],
+  account: ['Veresiye (cari)', 'On account', 'Auf Rechnung', 'Sur compte', 'A cuenta', 'В долг (на счёт)', 'على الحساب', '记账', 'نسیه (حساب مشتری)'],
+  mixed: ['Karma', 'Mixed', 'Gemischt', 'Mixte', 'Mixto', 'Смешанная', 'مختلط', '混合', 'ترکیبی'],
+  gold: ['Altın', 'Gold', 'Gold', 'Or', 'Oro', 'Золото', 'ذهب', '黄金', 'طلا'],
 });
