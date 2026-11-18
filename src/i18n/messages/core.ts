@@ -94,12 +94,12 @@ export const shell = defineMessages({
 });
 
 export const nav = defineMessages({
-  title: ['Ana menü', 'Main navigation', 'Hauptnavigation', 'Navigation principale', 'Navegación principal', 'Главное меню', 'القائمة الرئيسية', '主导航'],
-  search: ['Menüde ara', 'Search menu', 'Menü durchsuchen', 'Rechercher dans le menu', 'Buscar en el menú', 'Поиск в меню', 'البحث في القائمة', '搜索菜单'],
-  noResults: ['Eşleşen menü yok', 'No matching items', 'Keine passenden Einträge', 'Aucun élément correspondant', 'Sin coincidencias', 'Нет совпадений', 'لا توجد عناصر مطابقة', '无匹配项'],
-  collapse: ['Menüyü daralt', 'Collapse sidebar', 'Seitenleiste einklappen', 'Réduire le menu', 'Contraer menú', 'Свернуть меню', 'طي القائمة', '收起侧栏'],
-  expand: ['Menüyü sabitle', 'Pin sidebar open', 'Seitenleiste fixieren', 'Épingler le menu', 'Fijar menú abierto', 'Закрепить меню', 'تثبيت القائمة', '固定展开侧栏'],
-  openMenu: ['Menüyü aç', 'Open menu', 'Menü öffnen', 'Ouvrir le menu', 'Abrir menú', 'Открыть меню', 'فتح القائمة', '打开菜单'],
+  title: ['Ana menü', 'Main navigation', 'Hauptnavigation', 'Navigation principale', 'Navegación principal', 'Главное меню', 'القائمة الرئيسية', '主导航', 'پیمایش اصلی'],
+  search: ['Menüde ara', 'Search menu', 'Menü durchsuchen', 'Rechercher dans le menu', 'Buscar en el menú', 'Поиск в меню', 'البحث في القائمة', '搜索菜单', 'جست‌وجو در منو'],
+  noResults: ['Eşleşen menü yok', 'No matching items', 'Keine passenden Einträge', 'Aucun élément correspondant', 'Sin coincidencias', 'Нет совпадений', 'لا توجد عناصر مطابقة', '无匹配项', 'موردی در منو یافت نشد'],
+  collapse: ['Menüyü daralt', 'Collapse sidebar', 'Seitenleiste einklappen', 'Réduire le menu', 'Contraer menú', 'Свернуть меню', 'طي القائمة', '收起侧栏', 'جمع‌کردن نوار کناری'],
+  expand: ['Menüyü sabitle', 'Pin sidebar open', 'Seitenleiste fixieren', 'Épingler le menu', 'Fijar menú abierto', 'Закрепить меню', 'تثبيت القائمة', '固定展开侧栏', 'باز نگه‌داشتن نوار کناری'],
+  openMenu: ['Menüyü aç', 'Open menu', 'Menü öffnen', 'Ouvrir le menu', 'Abrir menú', 'Открыть меню', 'فتح القائمة', '打开菜单', 'بازکردن منو'],
   closeMenu: ['Menüyü kapat', 'Close menu', 'Menü schließen', 'Fermer le menu', 'Cerrar menú', 'Закрыть меню', 'إغلاق القائمة', '关闭菜单'],
   live: ['Canlı', 'Live', 'Live', 'Direct', 'Vivo', 'Live', 'مباشر', '实时'],
   groups: {
