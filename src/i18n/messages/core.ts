@@ -116,19 +116,19 @@ export const nav = defineMessages({
     finance: ['Alım ve finans', 'Purchasing & finance', 'Einkauf & Finanzen', 'Achats & finance', 'Compras y finanzas', 'Закупки и финансы', 'المشتريات والمالية', '采购与财务', 'خرید و امور مالی'],
     transfers: ['Şube transferleri', 'Branch transfers', 'Filialtransfers', 'Transferts entre agences', 'Traspasos entre sucursales', 'Перемещения между филиалами', 'التحويلات بين الفروع', '门店调拨', 'انتقال بین شعب'],
     pos: ['POS ve banka', 'POS & settlement', 'POS & Abrechnung', 'TPE & règlements', 'TPV y liquidación', 'POS и расчёты', 'نقاط البيع والتسوية', 'POS 与结算'],
-    calculator: ['Hesap makinesi', 'Calculator', 'Rechner', 'Calculatrice', 'Calculadora', 'Калькулятор', 'الحاسبة', '计算器'],
-    settings: ['Ayarlar', 'Settings', 'Einstellungen', 'Paramètres', 'Ajustes', 'Настройки', 'الإعدادات', '设置'],
+    calculator: ['Hesap makinesi', 'Calculator', 'Rechner', 'Calculatrice', 'Calculadora', 'Калькулятор', 'الحاسبة', '计算器', 'ماشین‌حساب'],
+    settings: ['Ayarlar', 'Settings', 'Einstellungen', 'Paramètres', 'Ajustes', 'Настройки', 'الإعدادات', '设置', 'تنظیمات'],
   },
 });
 
 export const roles = defineMessages({
-  admin: ['Yönetici', 'Administrator', 'Administrator', 'Administrateur', 'Administrador', 'Администратор', 'المسؤول', '管理员'],
-  manager: ['Şube müdürü', 'Branch manager', 'Filialleiter', 'Responsable d’agence', 'Gerente de sucursal', 'Управляющий филиалом', 'مدير الفرع', '门店经理'],
-  staff: ['Satış personeli', 'Sales staff', 'Verkaufspersonal', 'Vendeur', 'Personal de ventas', 'Продавец', 'موظف مبيعات', '销售人员'],
+  admin: ['Yönetici', 'Administrator', 'Administrator', 'Administrateur', 'Administrador', 'Администратор', 'المسؤول', '管理员', 'مدیر سامانه'],
+  manager: ['Şube müdürü', 'Branch manager', 'Filialleiter', 'Responsable d’agence', 'Gerente de sucursal', 'Управляющий филиалом', 'مدير الفرع', '门店经理', 'مدیر شعبه'],
+  staff: ['Satış personeli', 'Sales staff', 'Verkaufspersonal', 'Vendeur', 'Personal de ventas', 'Продавец', 'موظف مبيعات', '销售人员', 'کارمند فروش'],
 });
 
 export const toast = defineMessages({
-  region: ['Bildirimler', 'Notifications', 'Benachrichtigungen', 'Notifications', 'Notificaciones', 'Уведомления', 'الإشعارات', '通知'],
+  region: ['Bildirimler', 'Notifications', 'Benachrichtigungen', 'Notifications', 'Notificaciones', 'Уведомления', 'الإشعارات', '通知', 'اعلان‌ها'],
   repeated: ['{count} kez', '{count} times', '{count}-mal', '{count} fois', '{count} veces', '{count} раз', '{count} مرات', '{count} 次'],
 });
 
