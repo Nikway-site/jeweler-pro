@@ -55,7 +55,7 @@ export const common = defineMessages({
   supplier: ['Tedarikçi', 'Supplier', 'Lieferant', 'Fournisseur', 'Proveedor', 'Поставщик', 'المورد', '供应商', 'تأمین‌کننده'],
   loading: ['Yükleniyor…', 'Loading…', 'Wird geladen…', 'Chargement…', 'Cargando…', 'Загрузка…', 'جارٍ التحميل…', '加载中…', 'در حال بارگذاری…'],
   noData: ['Kayıt bulunamadı.', 'No records found.', 'Keine Einträge gefunden.', 'Aucun enregistrement.', 'No se encontraron registros.', 'Записи не найдены.', 'لا توجد سجلات.', '未找到记录。', 'هیچ رکوردی یافت نشد.'],
-  noResults: ['Aramanızla eşleşen kayıt yok.', 'Nothing matches your search.', 'Keine Treffer für Ihre Suche.', 'Aucun résultat pour cette recherche.', 'Nada coincide con su búsqueda.', 'Ничего не найдено.', 'لا توجد نتائج مطابقة.', '没有匹配的结果。'],
+  noResults: ['Aramanızla eşleşen kayıt yok.', 'Nothing matches your search.', 'Keine Treffer für Ihre Suche.', 'Aucun résultat pour cette recherche.', 'Nada coincide con su búsqueda.', 'Ничего не найдено.', 'لا توجد نتائج مطابقة.', '没有匹配的结果。', 'نتیجه‌ای مطابق جست‌وجوی شما یافت نشد.'],
   required: ['Zorunlu alan', 'Required field', 'Pflichtfeld', 'Champ obligatoire', 'Campo obligatorio', 'Обязательное поле', 'حقل مطلوب', '必填项', 'فیلد الزامی'],
   optional: ['İsteğe bağlı', 'Optional', 'Optional', 'Facultatif', 'Opcional', 'Необязательно', 'اختياري', '可选', 'اختیاری'],
   active: ['Aktif', 'Active', 'Aktiv', 'Actif', 'Activo', 'Активен', 'نشط', '启用', 'فعال'],
@@ -79,8 +79,8 @@ export const common = defineMessages({
   page: ['Sayfa {page} / {pages}', 'Page {page} of {pages}', 'Seite {page} von {pages}', 'Page {page} sur {pages}', 'Página {page} de {pages}', 'Страница {page} из {pages}', 'صفحة {page} من {pages}', '第 {page} / {pages} 页', 'صفحه {page} از {pages}'],
   unknown: ['Bilinmiyor', 'Unknown', 'Unbekannt', 'Inconnu', 'Desconocido', 'Неизвестно', 'غير معروف', '未知', 'نامشخص'],
   live: ['Canlı', 'Live', 'Live', 'En direct', 'En vivo', 'Онлайн', 'مباشر', '实时', 'لحظه‌ای'],
-  stale: ['Önbellek', 'Cached', 'Zwischengespeichert', 'En cache', 'En caché', 'Из кэша', 'مخزّن مؤقتاً', '缓存'],
-  lastUpdated: ['Son güncelleme: {time}', 'Last updated: {time}', 'Zuletzt aktualisiert: {time}', 'Dernière mise à jour : {time}', 'Última actualización: {time}', 'Обновлено: {time}', 'آخر تحديث: {time}', '最后更新：{time}'],
+  stale: ['Önbellek', 'Cached', 'Zwischengespeichert', 'En cache', 'En caché', 'Из кэша', 'مخزّن مؤقتاً', '缓存', 'ذخیره‌شده در حافظهٔ موقت'],
+  lastUpdated: ['Son güncelleme: {time}', 'Last updated: {time}', 'Zuletzt aktualisiert: {time}', 'Dernière mise à jour : {time}', 'Última actualización: {time}', 'Обновлено: {time}', 'آخر تحديث: {time}', '最后更新：{time}', 'آخرین به‌روزرسانی: {time}'],
 });
 
 export const shell = defineMessages({
@@ -115,7 +115,7 @@ export const nav = defineMessages({
     reports: ['Raporlar', 'Reports', 'Berichte', 'Rapports', 'Informes', 'Отчёты', 'التقارير', '报表', 'گزارش‌ها'],
     finance: ['Alım ve finans', 'Purchasing & finance', 'Einkauf & Finanzen', 'Achats & finance', 'Compras y finanzas', 'Закупки и финансы', 'المشتريات والمالية', '采购与财务', 'خرید و امور مالی'],
     transfers: ['Şube transferleri', 'Branch transfers', 'Filialtransfers', 'Transferts entre agences', 'Traspasos entre sucursales', 'Перемещения между филиалами', 'التحويلات بين الفروع', '门店调拨', 'انتقال بین شعب'],
-    pos: ['POS ve banka', 'POS & settlement', 'POS & Abrechnung', 'TPE & règlements', 'TPV y liquidación', 'POS и расчёты', 'نقاط البيع والتسوية', 'POS 与结算'],
+    pos: ['POS ve banka', 'POS & settlement', 'POS & Abrechnung', 'TPE & règlements', 'TPV y liquidación', 'POS и расчёты', 'نقاط البيع والتسوية', 'POS 与结算', 'پایانه فروش و تسویه'],
     calculator: ['Hesap makinesi', 'Calculator', 'Rechner', 'Calculatrice', 'Calculadora', 'Калькулятор', 'الحاسبة', '计算器', 'ماشین‌حساب'],
     settings: ['Ayarlar', 'Settings', 'Einstellungen', 'Paramètres', 'Ajustes', 'Настройки', 'الإعدادات', '设置', 'تنظیمات'],
   },
@@ -129,11 +129,11 @@ export const roles = defineMessages({
 
 export const toast = defineMessages({
   region: ['Bildirimler', 'Notifications', 'Benachrichtigungen', 'Notifications', 'Notificaciones', 'Уведомления', 'الإشعارات', '通知', 'اعلان‌ها'],
-  repeated: ['{count} kez', '{count} times', '{count}-mal', '{count} fois', '{count} veces', '{count} раз', '{count} مرات', '{count} 次'],
+  repeated: ['{count} kez', '{count} times', '{count}-mal', '{count} fois', '{count} veces', '{count} раз', '{count} مرات', '{count} 次', '{count} بار'],
 });
 
 export const confirm = defineMessages({
-  title: ['Emin misiniz?', 'Are you sure?', 'Sind Sie sicher?', 'Êtes-vous sûr ?', '¿Está seguro?', 'Вы уверены?', 'هل أنت متأكد؟', '确定吗？'],
+  title: ['Emin misiniz?', 'Are you sure?', 'Sind Sie sicher?', 'Êtes-vous sûr ?', '¿Está seguro?', 'Вы уверены?', 'هل أنت متأكد؟', '确定吗？', 'آیا مطمئن هستید؟'],
 });
 
 export const units = defineMessages({
