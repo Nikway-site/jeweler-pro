@@ -656,6 +656,52 @@ describe('Financial core (real MongoDB, HTTP)', { skip: !uri && 'MONGO_URI not s
 
   // ===================================================================
   describe('Purchases and suppliers', () => {
+    it('Bahar STAR IR-01 F1: purchase payable clears only on two recorded partial transfers', async () => {
+      // TRY-only proxy of #35 F1: 10.000 g 18K at 50.00 TRY/g = 500.00 TRY.
+      // A payment instruction at T1 is NOT a bank settlement or an API event.
+      // The existing engine does NOT authenticate bank confirmation at T2/T3;
+      // this test proves payable arithmetic/posting only, not bank verification.
+      const t = await tenant();
+      const s = await supplier(t.admin);
+      const purchase = await mustCreate(await t.manager.post('/api/purchases', {
+        supplierId: s._id,
+        lines: [{ metal: 'XAU', karat: 18, weightGrams: '10.000', totalCost: '500.00' }],
+        payments: [],
+      }), 'F1 T0 purchase obligation');
+      const ref = { businessId: t.businessId, 'reference.id': String(purchase._id) };
+      const poolAtT0 = await t.manager.get('/api/inventory/metal');
+      assert.equal(poolAtT0.status, 200);
+      assert.deepEqual(poolAtT0.body.map((p) => [p.purity, p.weightGrams, p.fineGrams]), [[7500, 10, 7.5]]);
+      assert.equal(purchase.total, 500);
+      assert.equal(purchase.paid, 0);
+      assert.equal(purchase.remaining, 500);
+      assert.equal(purchase.paymentStatus, 'unpaid');
+      assert.equal(await LedgerEntry.countDocuments({ ...ref, entryType: 'purchase' }), 1);
+      assert.equal(await LedgerEntry.countDocuments({ ...ref, entryType: 'supplier_payment' }), 0);
+      // T1: an external transfer instruction has not been booked in Jeweler Pro.
+      const atT1 = await t.manager.get(`/api/purchases/${purchase._id}`);
+      assert.equal(atT1.body.remaining, 500);
+      assert.equal((await balances(t.admin))(`ap:${s._id}`), -500);
+      // T2/T3: simulate the bookkeeping AFTER assumed external confirmation.
+      // This API does not verify a bank statement; separate F2 remains red.
+      const first = await t.manager.post(`/api/purchases/${purchase._id}/payments`, { method: 'havale', amount: '300.00' });
+      assert.equal(first.status, 200, JSON.stringify(first.body));
+      assert.equal(first.body.paymentStatus, 'partial');
+      assert.equal(first.body.remaining, 200);
+      assert.equal(await LedgerEntry.countDocuments({ ...ref, entryType: 'supplier_payment' }), 1);
+      assert.equal((await balances(t.admin))(`ap:${s._id}`), -200);
+      const second = await t.manager.post(`/api/purchases/${purchase._id}/payments`, { method: 'havale', amount: '200.00' });
+      assert.equal(second.status, 200, JSON.stringify(second.body));
+      assert.equal(second.body.paymentStatus, 'paid');
+      assert.equal(second.body.remaining, 0);
+      assert.equal(await LedgerEntry.countDocuments({ ...ref, entryType: 'supplier_payment' }), 2);
+      assert.equal((await balances(t.admin))(`ap:${s._id}`), 0);
+      assert.equal((await balances(t.admin))(`bank:${BRANCH}:transfer`), -500);
+      const poolAtT3 = await t.manager.get('/api/inventory/metal');
+      assert.deepEqual(poolAtT3.body.map((p) => [p.purity, p.weightGrams, p.fineGrams]), [[7500, 10, 7.5]]);
+      await assertReconciled(t.admin, 'F1 partial purchase transfer bookkeeping');
+    });
+
     it('purchase → stock & metal pool → supplier payable → payments (direct and FIFO voucher); cancellation rules', async () => {
       const t = await tenant();
       const s = await supplier(t.admin);
