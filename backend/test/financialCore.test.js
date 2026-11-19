@@ -281,6 +281,51 @@ describe('Financial core (real MongoDB, HTTP)', { skip: !uri && 'MONGO_URI not s
       await assertReconciled(t.admin, 'F4 append-only cancellation');
     });
 
+    it('Bahar STAR IR-01 F3: counter-trades keep supplier and customer obligations separate', async () => {
+      const t = await tenant();
+      // Synthetic pair tied by one stock item, NOT an explicit broker-link contract.
+      // Buy 2 at 300.00 TRY each = 600.00 payable; sell 1 at 500.00 TRY
+      // = 500.00 receivable, 300.00 COGS, 1 unit remaining. NOT IRR.
+      const p = await product(t.admin, { name: 'Synthetic F3 paired stock', price: '500.00', stock: 0 });
+      const s = await supplier(t.admin);
+      const c = await customer(t.admin);
+      const purchase = await mustCreate(await t.manager.post('/api/purchases', {
+        supplierId: s._id, lines: [{ productId: p._id, quantity: 2, unitCost: '300.00' }], payments: [],
+      }), 'F3 supplier purchase');
+      const sale = await mustCreate(await t.staff.post('/api/sales', {
+        customerId: c._id, lines: [{ productId: p._id, quantity: 1 }], payments: [],
+      }), 'F3 customer sale');
+      assert.equal(String(purchase.supplierId), String(s._id));
+      assert.equal(String(sale.customerId), String(c._id));
+      assert.equal(purchase.total, 600);
+      assert.equal(purchase.remaining, 600);
+      assert.equal(sale.financial.total, 500);
+      assert.equal(sale.financial.balanceDue, 500);
+      const buyJournal = await LedgerEntry.findOne({
+        businessId: t.businessId, entryType: 'purchase', 'reference.id': String(purchase._id),
+      }).lean();
+      const sellJournal = await LedgerEntry.findOne({
+        businessId: t.businessId, entryType: 'sale', 'reference.id': String(sale._id),
+      }).lean();
+      assert.ok(buyJournal && sellJournal, 'two separately referenced posted journals');
+      assert.notEqual(String(buyJournal._id), String(sellJournal._id));
+      assert.equal(buyJournal.reference.kind, 'Purchase');
+      assert.equal(sellJournal.reference.kind, 'Sale');
+      const bal = await balances(t.admin);
+      assert.equal(bal(`ap:${s._id}`), -600, 'supplier payable is not customer receivable');
+      assert.equal(bal(`ar:${c._id}`), 500, 'buyer still owes 500 TRY');
+      assert.equal(bal('revenue:sales'), -500);
+      assert.equal(bal('cogs'), 300);
+      assert.equal(await stockOf(p._id), 1);
+      assert.equal(await StockMovement.countDocuments({
+        businessId: t.businessId, productId: p._id, movementType: 'purchase',
+      }), 1);
+      assert.equal(await StockMovement.countDocuments({
+        businessId: t.businessId, productId: p._id, movementType: 'sale',
+      }), 1);
+      await assertReconciled(t.admin, 'F3 separate customer and supplier counter-trades');
+    });
+
     it('multi-line gram + fixed sale: exact prices, discounts, split partial payment, stock, COGS, receivable, collection', async () => {
       const t = await tenant();
       const bilezik = await product(t.admin, {
