@@ -242,6 +242,45 @@ describe('Financial core (real MongoDB, HTTP)', { skip: !uri && 'MONGO_URI not s
       await assertReconciled(t.admin, 'F6 same-key retry');
     });
 
+    it('Bahar STAR IR-01 F4: cancel appends mirror journal without rewriting the original', async () => {
+      // Synthetic 900.00 TRY unpaid sale with 350.00 TRY cost, not an IRR fixture.
+      const t = await tenant();
+      const p = await product(t.admin, { name: 'Synthetic F4 reversal', price: '900.00', costPrice: '350.00', stock: 1 });
+      const c = await customer(t.admin);
+      const sale = await mustCreate(await t.staff.post('/api/sales', {
+        customerId: c._id, lines: [{ productId: p._id, quantity: 1 }], payments: [],
+      }), 'F4 unpaid sale');
+      const filter = { businessId: t.businessId, 'reference.id': String(sale._id) };
+      const original = await LedgerEntry.findOne({ ...filter, entryType: 'sale' }).lean();
+      assert.ok(original, 'original sale journal exists');
+      const facts = (lines) => lines.map(({ account, unit, debit, credit }) => ({ account, unit, debit, credit }));
+      const originalFacts = facts(original.lines);
+      assert.equal(await stockOf(p._id), 0);
+      const cancelled = await t.manager.del(`/api/sales/${sale._id}`);
+      assert.equal(cancelled.status, 200, JSON.stringify(cancelled.body));
+      const reversal = await LedgerEntry.findOne({ ...filter, entryType: 'sale_cancel' }).lean();
+      const preserved = await LedgerEntry.findOne({ _id: original._id, businessId: t.businessId }).lean();
+      assert.ok(reversal, 'a separate cancellation journal exists');
+      assert.deepEqual(facts(preserved.lines), originalFacts, 'posted entry lines remain unchanged');
+      assert.equal(String(reversal.reversalOf), String(original._id));
+      assert.equal(String(preserved.reversedBy), String(reversal._id));
+      assert.deepEqual(facts(reversal.lines), originalFacts.map(({ account, unit, debit, credit }) => ({
+        account, unit, debit: credit, credit: debit,
+      })), 'reversal mirrors every original debit and credit');
+      assert.equal(await LedgerEntry.countDocuments({ ...filter, entryType: 'sale_cancel' }), 1);
+      assert.equal(await StockMovement.countDocuments({
+        businessId: t.businessId, productId: p._id, movementType: 'sale_cancel',
+      }), 1, 'cancelled stock is restored once');
+      assert.equal(await stockOf(p._id), 1);
+      assert.equal((await t.manager.del(`/api/sales/${sale._id}`)).status, 409);
+      assert.equal(await LedgerEntry.countDocuments({ ...filter, entryType: 'sale_cancel' }), 1);
+      const bal = await balances(t.admin);
+      assert.equal(bal(`ar:${c._id}`), 0);
+      assert.equal(bal('revenue:sales'), 0);
+      assert.equal(bal('cogs'), 0);
+      await assertReconciled(t.admin, 'F4 append-only cancellation');
+    });
+
     it('multi-line gram + fixed sale: exact prices, discounts, split partial payment, stock, COGS, receivable, collection', async () => {
       const t = await tenant();
       const bilezik = await product(t.admin, {
