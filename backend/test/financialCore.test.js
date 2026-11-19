@@ -173,6 +173,38 @@ describe('Financial core (real MongoDB, HTTP)', { skip: !uri && 'MONGO_URI not s
         `unconfirmed payment must fail closed, received HTTP ${attempted.status}`);
     });
 
+    it('Bahar STAR IR-01 F5: 18K gross weight and fine weight remain distinct', async () => {
+      const t = await tenant();
+      // F5 fixture, independently calculated: 10.000 g gross × 0.7500 = 7.500 g fine.
+      // At synthetic 1000.00 TRY per fine gram, the expected price is 7500.00 TRY.
+      // This is a TRY-native precision proxy, NOT an IRR or Iranian tax acceptance test.
+      const p = await product(t.admin, {
+        name: 'Synthetic F5 18K', pricingMode: 'gram', metal: 'XAU', karat: 18,
+        weight: '10.000', laborType: 'none', costPrice: '5000.00', stock: 1,
+      });
+      const c = await customer(t.admin);
+      const sale = await mustCreate(await t.staff.post('/api/sales', {
+        customerId: c._id, lines: [{ productId: p._id, quantity: 1 }],
+        payments: [], manualPrices: { XAU: '1000.00' },
+      }), 'F5 18K sale');
+      assert.equal(sale.lines[0].weightGramsPerUnit, 10, 'gross is 10.000 g');
+      assert.equal(sale.lines[0].purity, 7500, '18K is 0.7500 purity');
+      assert.equal(sale.lines[0].fineGrams, 7.5, 'fine gold is 7.500 g');
+      assert.equal(sale.lines[0].unitPrice, 7500, 'exact synthetic metal price');
+      assert.equal(sale.financial.total, 7500);
+      assert.equal(sale.financial.balanceDue, 7500, 'unpaid obligation persists');
+      assert.equal(sale.financial.paymentStatus, 'unpaid');
+      const bal = await balances(t.admin);
+      assert.equal(bal(`ar:${c._id}`), 7500, 'receivable, not bank settlement');
+      assert.equal(bal('revenue:sales'), -7500);
+      assert.equal(bal('cogs'), 5000);
+      assert.equal(await stockOf(p._id), 0);
+      assert.equal(await StockMovement.countDocuments({
+        businessId: t.businessId, productId: p._id, movementType: 'sale',
+      }), 1, 'exactly one sale stock movement');
+      await assertReconciled(t.admin, 'F5 18K precision and open obligation');
+    });
+
     it('multi-line gram + fixed sale: exact prices, discounts, split partial payment, stock, COGS, receivable, collection', async () => {
       const t = await tenant();
       const bilezik = await product(t.admin, {
