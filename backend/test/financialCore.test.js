@@ -295,8 +295,8 @@ describe('Financial core (real MongoDB, HTTP)', { skip: !uri && 'MONGO_URI not s
       const sale = await mustCreate(await t.staff.post('/api/sales', {
         customerId: c._id, lines: [{ productId: p._id, quantity: 1 }], payments: [],
       }), 'F3 customer sale');
-      assert.equal(String(purchase.supplierId), String(s._id));
-      assert.equal(String(sale.customerId), String(c._id));
+      assert.equal(String(purchase.supplierId?._id ?? purchase.supplierId), String(s._id));
+      assert.equal(String(sale.customerId?._id ?? sale.customerId), String(c._id));
       assert.equal(purchase.total, 600);
       assert.equal(purchase.remaining, 600);
       assert.equal(sale.financial.total, 500);
