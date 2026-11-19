@@ -205,6 +205,43 @@ describe('Financial core (real MongoDB, HTTP)', { skip: !uri && 'MONGO_URI not s
       await assertReconciled(t.admin, 'F5 18K precision and open obligation');
     });
 
+    it('Bahar STAR IR-01 F6: same-key retry creates one sale journal and one stock movement', async () => {
+      // Synthetic retry after a simulated lost client response; no real network outage.
+      // Exactly one unpaid 620.00 TRY sale must remain, not 2 × 620.00 TRY.
+      const t = await tenant();
+      const p = await product(t.admin, {
+        name: 'Synthetic F6 retry', price: '620.00', costPrice: '250.00', stock: 2,
+      });
+      const c = await customer(t.admin);
+      const payload = {
+        customerId: c._id, lines: [{ productId: p._id, quantity: 1 }], payments: [],
+      };
+      const headers = { 'Idempotency-Key': `bahar-f6-${uid()}-retry` };
+      const first = await t.staff.post('/api/sales', payload, headers);
+      assert.equal(first.status, 201, JSON.stringify(first.body));
+      // The client discards the first response, then repeats the identical command.
+      const replay = await t.staff.post('/api/sales', payload, headers);
+      const replayAgain = await t.staff.post('/api/sales', payload, headers);
+      for (const res of [replay, replayAgain]) {
+        assert.equal(res.status, 201, JSON.stringify(res.body));
+        assert.equal(res.headers['idempotent-replayed'], 'true');
+        assert.equal(res.body._id, first.body._id);
+      }
+      assert.equal(await Sale.countDocuments({ businessId: t.businessId, customerId: c._id }), 1);
+      assert.equal(await LedgerEntry.countDocuments({
+        businessId: t.businessId, entryType: 'sale', 'reference.id': String(first.body._id),
+      }), 1, 'one sale journal on retry');
+      assert.equal(await StockMovement.countDocuments({
+        businessId: t.businessId, productId: p._id, movementType: 'sale',
+      }), 1, 'one stock movement on retry');
+      assert.equal(await stockOf(p._id), 1);
+      assert.equal((await Sale.findById(first.body._id).lean()).balanceDueMinor, 62000);
+      const bal = await balances(t.admin);
+      assert.equal(bal(`ar:${c._id}`), 620);
+      assert.equal(bal('revenue:sales'), -620);
+      await assertReconciled(t.admin, 'F6 same-key retry');
+    });
+
     it('multi-line gram + fixed sale: exact prices, discounts, split partial payment, stock, COGS, receivable, collection', async () => {
       const t = await tenant();
       const bilezik = await product(t.admin, {
