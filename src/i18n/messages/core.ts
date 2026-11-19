@@ -315,14 +315,14 @@ export const errors = defineMessages({
 
 export const status = defineMessages({
   payment: {
-    paid: ['Ödendi', 'Paid', 'Bezahlt', 'Payé', 'Pagado', 'Оплачено', 'مدفوع', '已付款'],
-    partial: ['Kısmi ödeme', 'Partially paid', 'Teilweise bezahlt', 'Paiement partiel', 'Pago parcial', 'Частично оплачено', 'مدفوع جزئياً', '部分付款'],
-    unpaid: ['Açık hesap', 'On account', 'Offen', 'À crédit', 'Pendiente', 'Не оплачено', 'على الحساب', '未付款'],
-    refunded: ['İade edildi', 'Refunded', 'Erstattet', 'Remboursé', 'Reembolsado', 'Возвращено', 'مسترد', '已退款'],
+    paid: ['Ödendi', 'Paid', 'Bezahlt', 'Payé', 'Pagado', 'Оплачено', 'مدفوع', '已付款', 'پرداخت‌شده'],
+    partial: ['Kısmi ödeme', 'Partially paid', 'Teilweise bezahlt', 'Paiement partiel', 'Pago parcial', 'Частично оплачено', 'مدفوع جزئياً', '部分付款', 'بخشی پرداخت‌شده'],
+    unpaid: ['Açık hesap', 'On account', 'Offen', 'À crédit', 'Pendiente', 'Не оплачено', 'على الحساب', '未付款', 'حساب باز (پرداخت‌نشده)'],
+    refunded: ['İade edildi', 'Refunded', 'Erstattet', 'Remboursé', 'Reembolsado', 'Возвращено', 'مسترد', '已退款', 'وجه بازپرداخت‌شده'],
   },
   sale: {
-    completed: ['Tamamlandı', 'Completed', 'Abgeschlossen', 'Terminée', 'Completada', 'Завершена', 'مكتمل', '已完成'],
-    partially_returned: ['Kısmi iade', 'Partially returned', 'Teilweise retourniert', 'Retour partiel', 'Devolución parcial', 'Частичный возврат', 'مرتجع جزئياً', '部分退货'],
+    completed: ['Tamamlandı', 'Completed', 'Abgeschlossen', 'Terminée', 'Completada', 'Завершена', 'مكتمل', '已完成', 'تکمیل‌شده'],
+    partially_returned: ['Kısmi iade', 'Partially returned', 'Teilweise retourniert', 'Retour partiel', 'Devolución parcial', 'Частичный возврат', 'مرتجع جزئياً', '部分退货', 'بخشی مرجوع‌شده'],
     returned: ['İade edildi', 'Returned', 'Retourniert', 'Retournée', 'Devuelta', 'Возвращена', 'مرتجع', '已退货'],
     cancelled: ['İptal', 'Cancelled', 'Storniert', 'Annulée', 'Cancelada', 'Отменена', 'ملغى', '已取消'],
   },
