@@ -323,8 +323,8 @@ export const status = defineMessages({
   sale: {
     completed: ['Tamamlandı', 'Completed', 'Abgeschlossen', 'Terminée', 'Completada', 'Завершена', 'مكتمل', '已完成', 'تکمیل‌شده'],
     partially_returned: ['Kısmi iade', 'Partially returned', 'Teilweise retourniert', 'Retour partiel', 'Devolución parcial', 'Частичный возврат', 'مرتجع جزئياً', '部分退货', 'بخشی مرجوع‌شده'],
-    returned: ['İade edildi', 'Returned', 'Retourniert', 'Retournée', 'Devuelta', 'Возвращена', 'مرتجع', '已退货'],
-    cancelled: ['İptal', 'Cancelled', 'Storniert', 'Annulée', 'Cancelada', 'Отменена', 'ملغى', '已取消'],
+    returned: ['İade edildi', 'Returned', 'Retourniert', 'Retournée', 'Devuelta', 'Возвращена', 'مرتجع', '已退货', 'مرجوع‌شده'],
+    cancelled: ['İptal', 'Cancelled', 'Storniert', 'Annulée', 'Cancelada', 'Отменена', 'ملغى', '已取消', 'لغوشده'],
   },
   transfer: {
     draft: ['Taslak', 'Draft', 'Entwurf', 'Brouillon', 'Borrador', 'Черновик', 'مسودة', '草稿', 'پیش‌نویس'],
@@ -333,7 +333,7 @@ export const status = defineMessages({
     partially_received: ['Kısmen teslim', 'Partially received', 'Teilweise erhalten', 'Reçu partiellement', 'Recibido parcialmente', 'Получено частично', 'مستلم جزئياً', '部分签收', 'بخشی دریافت‌شده'],
     received: ['Tamamlandı', 'Received', 'Erhalten', 'Reçu', 'Recibido', 'Получено', 'مستلم', '已签收', 'دریافت‌شده'],
     cancelled: ['İptal', 'Cancelled', 'Storniert', 'Annulé', 'Cancelado', 'Отменено', 'ملغى', '已取消', 'لغوشده'],
-    rejected: ['Reddedildi', 'Rejected', 'Abgelehnt', 'Rejeté', 'Rechazado', 'Отклонено', 'مرفوض', '已拒绝'],
+    rejected: ['Reddedildi', 'Rejected', 'Abgelehnt', 'Rejeté', 'Rechazado', 'Отклонено', 'مرفوض', '已拒绝', 'ردشده'],
   },
   transferEvent: {
     created: ['Oluşturuldu', 'Created', 'Erstellt', 'Créé', 'Creado', 'Создано', 'أُنشئ', '已创建', 'ایجادشده'],
@@ -346,9 +346,9 @@ export const status = defineMessages({
     written_off: ['Kayıp / fire', 'Written off (loss)', 'Abgeschrieben (Verlust)', 'Passé en perte', 'Dado de baja (pérdida)', 'Списано (потеря)', 'شُطب (فقد)', '核销（损耗）'],
   },
   pos: {
-    open: ['Açık', 'Open', 'Offen', 'Ouvert', 'Abierto', 'Открыто', 'مفتوح', '未结算'],
-    partially_settled: ['Kısmi tahsil', 'Partially settled', 'Teilweise abgerechnet', 'Réglé partiellement', 'Liquidado parcialmente', 'Частично зачислено', 'مسوّى جزئياً', '部分结算'],
-    settled: ['Tahsil edildi', 'Settled', 'Abgerechnet', 'Réglé', 'Liquidado', 'Зачислено', 'مسوّى', '已结算'],
+    open: ['Açık', 'Open', 'Offen', 'Ouvert', 'Abierto', 'Открыто', 'مفتوح', '未结算', 'باز (تسویه‌نشده)'],
+    partially_settled: ['Kısmi tahsil', 'Partially settled', 'Teilweise abgerechnet', 'Réglé partiellement', 'Liquidado parcialmente', 'Частично зачислено', 'مسوّى جزئياً', '部分结算', 'تسویه جزئی'],
+    settled: ['Tahsil edildi', 'Settled', 'Abgerechnet', 'Réglé', 'Liquidado', 'Зачислено', 'مسوّى', '已结算', 'تسویه‌شده'],
   },
 });
 
