@@ -1,12 +1,12 @@
 import { defineMessages } from '../define';
 
-const P = (tr: string, en: string, de: string, fr: string, es: string, ru: string, ar: string, zh: string) => [tr, en, de, fr, es, ru, ar, zh] as const;
+const P = (tr: string, en: string, de: string, fr: string, es: string, ru: string, ar: string, zh: string, fa?: string) => fa === undefined ? [tr, en, de, fr, es, ru, ar, zh] as const : [tr, en, de, fr, es, ru, ar, zh, fa] as const;
 
 // [tr, en, de, fr, es, ru, ar, zh]
 export default defineMessages({
   alimStokVeMuhasebe: P('Alım, stok ve muhasebe', 'Purchasing, stock & accounting', 'Einkauf, Bestand & Buchhaltung', 'Achats, stock & comptabilité', 'Compras, stock y contabilidad', 'Закупки, склад и учёт', 'المشتريات والمخزون والمحاسبة', '采购、库存与会计'),
   alimFinans: P('Alım ve finans', 'Purchasing & finance', 'Einkauf & Finanzen', 'Achats & finance', 'Compras y finanzas', 'Закупки и финансы', 'المشتريات والمالية', '采购与财务'),
-  p0TedarikciToplamBorcP1: P('{p0} tedarikçi · toplam borç {p1}', '{p0} suppliers · total payable {p1}', '{p0} Lieferanten · Verbindlichkeiten {p1}', '{p0} fournisseurs · dettes {p1}', '{p0} proveedores · deuda total {p1}', 'Поставщиков: {p0} · долг {p1}', '{p0} مورد · إجمالي المستحق {p1}', '{p0} 家供应商 · 应付合计 {p1}'),
+  p0TedarikciToplamBorcP1: P('{p0} tedarikçi · toplam borç {p1}', '{p0} suppliers · total payable {p1}', '{p0} Lieferanten · Verbindlichkeiten {p1}', '{p0} fournisseurs · dettes {p1}', '{p0} proveedores · deuda total {p1}', 'Поставщиков: {p0} · долг {p1}', '{p0} مورد · إجمالي المستحق {p1}', '{p0} 家供应商 · 应付合计 {p1}', '{p0} تأمین‌کننده · مجموع بدهی {p1}'),
   tedarikciEkle: P('Tedarikçi Ekle', 'Add supplier', 'Lieferant hinzufügen', 'Ajouter un fournisseur', 'Añadir proveedor', 'Добавить поставщика', 'إضافة مورد', '添加供应商'),
   tedarikci: P('Tedarikçi', 'Supplier', 'Lieferant', 'Fournisseur', 'Proveedor', 'Поставщик', 'المورد', '供应商'),
   tedarikci2: P('Tedarikçi *', 'Supplier *', 'Lieferant *', 'Fournisseur *', 'Proveedor *', 'Поставщик *', 'المورد *', '供应商 *'),
@@ -15,17 +15,17 @@ export default defineMessages({
   vergiNo: P('Vergi no', 'Tax no.', 'Steuernr.', 'N° fiscal', 'N.º fiscal', 'ИНН', 'الرقم الضريبي', '税号'),
   vergiNo2: P('Vergi no', 'Tax no.', 'Steuernr.', 'N° fiscal', 'N.º fiscal', 'ИНН', 'الرقم الضريبي', '税号'),
   vergiDairesi: P('Vergi dairesi', 'Tax office', 'Finanzamt', 'Centre des impôts', 'Oficina tributaria', 'Налоговая', 'مكتب الضرائب', '税务机关'),
-  bakiyeBorcumuz: P('Bakiye (borcumuz)', 'Balance (we owe)', 'Saldo (wir schulden)', 'Solde (dû)', 'Saldo (debemos)', 'Сальдо (наш долг)', 'الرصيد (علينا)', '余额（我方应付）'),
+  bakiyeBorcumuz: P('Bakiye (borcumuz)', 'Balance (we owe)', 'Saldo (wir schulden)', 'Solde (dû)', 'Saldo (debemos)', 'Сальдо (наш долг)', 'الرصيد (علينا)', '余额（我方应付）', 'مانده بدهی ما'),
   bakiyeBorcumuz2: P('Bakiye (borcumuz):', 'Balance (we owe):', 'Saldo (wir schulden):', 'Solde (dû) :', 'Saldo (debemos):', 'Сальдо (наш долг):', 'الرصيد (علينا):', '余额（我方应付）：'),
   islemler: P('İşlemler', 'Actions', 'Aktionen', 'Actions', 'Acciones', 'Действия', 'الإجراءات', '操作'),
-  ekstre: P('Ekstre', 'Statement', 'Auszug', 'Relevé', 'Extracto', 'Выписка', 'كشف', '对账单'),
-  odemeYap: P('Ödeme yap', 'Make payment', 'Zahlung leisten', 'Payer', 'Pagar', 'Оплатить', 'دفع', '付款'),
+  ekstre: P('Ekstre', 'Statement', 'Auszug', 'Relevé', 'Extracto', 'Выписка', 'كشف', '对账单', 'صورت‌حساب'),
+  odemeYap: P('Ödeme yap', 'Make payment', 'Zahlung leisten', 'Payer', 'Pagar', 'Оплатить', 'دفع', '付款', 'ثبت پرداخت'),
   henuzTedarikciKaydiYok: P('Henüz tedarikçi yok.', 'No suppliers yet.', 'Noch keine Lieferanten.', 'Aucun fournisseur.', 'Aún no hay proveedores.', 'Поставщиков пока нет.', 'لا يوجد موردون بعد.', '暂无供应商。'),
-  p0AlisAcikBorcP1: P('{p0} alış · açık borç {p1}', '{p0} purchases · open {p1}', '{p0} Einkäufe · offen {p1}', '{p0} achats · reste dû {p1}', '{p0} compras · pendiente {p1}', 'Закупок: {p0} · к оплате {p1}', '{p0} عملية شراء · المستحق {p1}', '{p0} 笔采购 · 未付 {p1}'),
+  p0AlisAcikBorcP1: P('{p0} alış · açık borç {p1}', '{p0} purchases · open {p1}', '{p0} Einkäufe · offen {p1}', '{p0} achats · reste dû {p1}', '{p0} compras · pendiente {p1}', 'Закупок: {p0} · к оплате {p1}', '{p0} عملية شراء · المستحق {p1}', '{p0} 笔采购 · 未付 {p1}', '{p0} خرید · مانده بدهی {p1}'),
   yeniAlis: P('Yeni Alış', 'New purchase', 'Neuer Einkauf', 'Nouvel achat', 'Nueva compra', 'Новая закупка', 'شراء جديد', '新建采购'),
   alisNo: P('Alış no', 'Purchase no.', 'Einkaufsnr.', 'N° d’achat', 'N.º de compra', '№ закупки', 'رقم الشراء', '采购单号'),
   iadeFark: P('İade / fark', 'Return / adj.', 'Retoure / Korr.', 'Retour / écart', 'Devol. / ajuste', 'Возврат / корр.', 'إرجاع / فرق', '退货 / 差价'),
-  odenen: P('Ödenen', 'Paid', 'Bezahlt', 'Payé', 'Pagado', 'Оплачено', 'المدفوع', '已付'),
+  odenen: P('Ödenen', 'Paid', 'Bezahlt', 'Payé', 'Pagado', 'Оплачено', 'المدفوع', '已付', 'پرداخت‌شده'),
   tarih: P('Tarih', 'Date', 'Datum', 'Date', 'Fecha', 'Дата', 'التاريخ', '日期'),
   alacagimizP0: P('alacağımız {p0}', 'credit {p0}', 'Guthaben {p0}', 'avoir {p0}', 'a favor {p0}', 'наш кредит {p0}', 'رصيد لنا {p0}', '我方应收 {p0}'),
   odeme: P('Ödeme', 'Payment', 'Zahlung', 'Paiement', 'Pago', 'Оплата', 'دفعة', '付款'),
