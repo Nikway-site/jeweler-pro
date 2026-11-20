@@ -327,12 +327,12 @@ export const status = defineMessages({
     cancelled: ['İptal', 'Cancelled', 'Storniert', 'Annulée', 'Cancelada', 'Отменена', 'ملغى', '已取消'],
   },
   transfer: {
-    draft: ['Taslak', 'Draft', 'Entwurf', 'Brouillon', 'Borrador', 'Черновик', 'مسودة', '草稿'],
-    approved: ['Onaylandı (rezerve)', 'Approved (reserved)', 'Genehmigt (reserviert)', 'Approuvé (réservé)', 'Aprobado (reservado)', 'Одобрено (резерв)', 'معتمد (محجوز)', '已批准（已预留）'],
-    in_transit: ['Yolda', 'In transit', 'Unterwegs', 'En transit', 'En tránsito', 'В пути', 'قيد النقل', '运输中'],
-    partially_received: ['Kısmen teslim', 'Partially received', 'Teilweise erhalten', 'Reçu partiellement', 'Recibido parcialmente', 'Получено частично', 'مستلم جزئياً', '部分签收'],
-    received: ['Tamamlandı', 'Received', 'Erhalten', 'Reçu', 'Recibido', 'Получено', 'مستلم', '已签收'],
-    cancelled: ['İptal', 'Cancelled', 'Storniert', 'Annulé', 'Cancelado', 'Отменено', 'ملغى', '已取消'],
+    draft: ['Taslak', 'Draft', 'Entwurf', 'Brouillon', 'Borrador', 'Черновик', 'مسودة', '草稿', 'پیش‌نویس'],
+    approved: ['Onaylandı (rezerve)', 'Approved (reserved)', 'Genehmigt (reserviert)', 'Approuvé (réservé)', 'Aprobado (reservado)', 'Одобрено (резерв)', 'معتمد (محجوز)', '已批准（已预留）', 'تأییدشده (رزروشده)'],
+    in_transit: ['Yolda', 'In transit', 'Unterwegs', 'En transit', 'En tránsito', 'В пути', 'قيد النقل', '运输中', 'در حال انتقال'],
+    partially_received: ['Kısmen teslim', 'Partially received', 'Teilweise erhalten', 'Reçu partiellement', 'Recibido parcialmente', 'Получено частично', 'مستلم جزئياً', '部分签收', 'بخشی دریافت‌شده'],
+    received: ['Tamamlandı', 'Received', 'Erhalten', 'Reçu', 'Recibido', 'Получено', 'مستلم', '已签收', 'دریافت‌شده'],
+    cancelled: ['İptal', 'Cancelled', 'Storniert', 'Annulé', 'Cancelado', 'Отменено', 'ملغى', '已取消', 'لغوشده'],
     rejected: ['Reddedildi', 'Rejected', 'Abgelehnt', 'Rejeté', 'Rechazado', 'Отклонено', 'مرفوض', '已拒绝'],
   },
   transferEvent: {
