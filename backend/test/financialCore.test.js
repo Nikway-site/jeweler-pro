@@ -130,6 +130,202 @@ describe('Financial core (real MongoDB, HTTP)', { skip: !uri && 'MONGO_URI not s
 
   // ===================================================================
   describe('Sales lifecycle', () => {
+    it('Bahar STAR IR-01 F2: screenshot-only transfer must not clear the books', async () => {
+      const t = await tenant();
+      // Native engine uses TRY, not IRR. Synthetic 2080.00 TRY = 208000 kuruş;
+      // this probes F2 settlement semantics, NOT Iran's 208,000,000 IRR fixture.
+      const p = await product(t.admin, { name: 'Synthetic F2 stock', price: '2080.00', costPrice: '800.00', stock: 1 });
+      const c = await customer(t.admin);
+      const sale = await mustCreate(await t.staff.post('/api/sales', {
+        customerId: c._id, lines: [{ productId: p._id, quantity: 1 }], payments: [],
+      }), 'F2 unpaid sale');
+      assert.equal(sale.financial.balanceDue, 2080);
+      assert.equal(sale.financial.paymentStatus, 'unpaid');
+      assert.equal(await stockOf(p._id), 0, 'only the sale changes inventory');
+
+      // Screenshot is synthetic, not proof of cleared funds. An unconfirmed
+      // transfer instruction must NOT post a collection or clear receivables.
+      const attempted = await t.staff.post(`/api/sales/${sale._id}/payments`, {
+        method: 'havale', amount: '2080.00',
+        receiptScreenshot: 'synthetic-unverified-receipt', bankConfirmed: false,
+      });
+      const stored = await Sale.findById(sale._id).lean();
+      const bal = await balances(t.admin);
+      const paymentJournalCount = await LedgerEntry.countDocuments({
+        businessId: t.businessId, entryType: 'sale_payment', 'reference.id': String(sale._id),
+      });
+      await assertReconciled(t.admin, 'F2 unconfirmed transfer');
+      // Independent expected state: open 2080.00 TRY receivable; no payment
+      // ledger or second stock move. The diff exposes the observed gap.
+      assert.deepEqual({
+        balanceDueMinor: stored.balanceDueMinor,
+        paymentStatus: stored.paymentStatus,
+        paymentCount: (stored.payments || []).length,
+        receivableTry: bal(`ar:${c._id}`),
+        bankTransferTry: bal(`bank:${BRANCH}:transfer`),
+        paymentJournalCount,
+        stock: await stockOf(p._id),
+      }, {
+        balanceDueMinor: 208000, paymentStatus: 'unpaid', paymentCount: 0,
+        receivableTry: 2080, bankTransferTry: 0, paymentJournalCount: 0, stock: 0,
+      }, 'a screenshot must not be treated as bank settlement');
+      assert.ok([400, 409].includes(attempted.status),
+        `unconfirmed payment must fail closed, received HTTP ${attempted.status}`);
+    });
+
+    it('Bahar STAR IR-01 F5: 18K gross weight and fine weight remain distinct', async () => {
+      const t = await tenant();
+      // F5 fixture, independently calculated: 10.000 g gross × 0.7500 = 7.500 g fine.
+      // At synthetic 1000.00 TRY per fine gram, the expected price is 7500.00 TRY.
+      // This is a TRY-native precision proxy, NOT an IRR or Iranian tax acceptance test.
+      const p = await product(t.admin, {
+        name: 'Synthetic F5 18K', pricingMode: 'gram', metal: 'XAU', karat: 18,
+        weight: '10.000', laborType: 'none', costPrice: '5000.00', stock: 1,
+      });
+      const c = await customer(t.admin);
+      const sale = await mustCreate(await t.staff.post('/api/sales', {
+        customerId: c._id, lines: [{ productId: p._id, quantity: 1 }],
+        payments: [], manualPrices: { XAU: '1000.00' },
+      }), 'F5 18K sale');
+      assert.equal(sale.lines[0].weightGramsPerUnit, 10, 'gross is 10.000 g');
+      assert.equal(sale.lines[0].purity, 7500, '18K is 0.7500 purity');
+      assert.equal(sale.lines[0].fineGrams, 7.5, 'fine gold is 7.500 g');
+      assert.equal(sale.lines[0].unitPrice, 7500, 'exact synthetic metal price');
+      assert.equal(sale.financial.total, 7500);
+      assert.equal(sale.financial.balanceDue, 7500, 'unpaid obligation persists');
+      assert.equal(sale.financial.paymentStatus, 'unpaid');
+      const bal = await balances(t.admin);
+      assert.equal(bal(`ar:${c._id}`), 7500, 'receivable, not bank settlement');
+      assert.equal(bal('revenue:sales'), -7500);
+      assert.equal(bal('cogs'), 5000);
+      assert.equal(await stockOf(p._id), 0);
+      assert.equal(await StockMovement.countDocuments({
+        businessId: t.businessId, productId: p._id, movementType: 'sale',
+      }), 1, 'exactly one sale stock movement');
+      await assertReconciled(t.admin, 'F5 18K precision and open obligation');
+    });
+
+    it('Bahar STAR IR-01 F6: same-key retry creates one sale journal and one stock movement', async () => {
+      // Synthetic retry after a simulated lost client response; no real network outage.
+      // Exactly one unpaid 620.00 TRY sale must remain, not 2 × 620.00 TRY.
+      const t = await tenant();
+      const p = await product(t.admin, {
+        name: 'Synthetic F6 retry', price: '620.00', costPrice: '250.00', stock: 2,
+      });
+      const c = await customer(t.admin);
+      const payload = {
+        customerId: c._id, lines: [{ productId: p._id, quantity: 1 }], payments: [],
+      };
+      const headers = { 'Idempotency-Key': `bahar-f6-${uid()}-retry` };
+      const first = await t.staff.post('/api/sales', payload, headers);
+      assert.equal(first.status, 201, JSON.stringify(first.body));
+      // The client discards the first response, then repeats the identical command.
+      const replay = await t.staff.post('/api/sales', payload, headers);
+      const replayAgain = await t.staff.post('/api/sales', payload, headers);
+      for (const res of [replay, replayAgain]) {
+        assert.equal(res.status, 201, JSON.stringify(res.body));
+        assert.equal(res.headers['idempotent-replayed'], 'true');
+        assert.equal(res.body._id, first.body._id);
+      }
+      assert.equal(await Sale.countDocuments({ businessId: t.businessId, customerId: c._id }), 1);
+      assert.equal(await LedgerEntry.countDocuments({
+        businessId: t.businessId, entryType: 'sale', 'reference.id': String(first.body._id),
+      }), 1, 'one sale journal on retry');
+      assert.equal(await StockMovement.countDocuments({
+        businessId: t.businessId, productId: p._id, movementType: 'sale',
+      }), 1, 'one stock movement on retry');
+      assert.equal(await stockOf(p._id), 1);
+      assert.equal((await Sale.findById(first.body._id).lean()).balanceDueMinor, 62000);
+      const bal = await balances(t.admin);
+      assert.equal(bal(`ar:${c._id}`), 620);
+      assert.equal(bal('revenue:sales'), -620);
+      await assertReconciled(t.admin, 'F6 same-key retry');
+    });
+
+    it('Bahar STAR IR-01 F4: cancel appends mirror journal without rewriting the original', async () => {
+      // Synthetic 900.00 TRY unpaid sale with 350.00 TRY cost, not an IRR fixture.
+      const t = await tenant();
+      const p = await product(t.admin, { name: 'Synthetic F4 reversal', price: '900.00', costPrice: '350.00', stock: 1 });
+      const c = await customer(t.admin);
+      const sale = await mustCreate(await t.staff.post('/api/sales', {
+        customerId: c._id, lines: [{ productId: p._id, quantity: 1 }], payments: [],
+      }), 'F4 unpaid sale');
+      const filter = { businessId: t.businessId, 'reference.id': String(sale._id) };
+      const original = await LedgerEntry.findOne({ ...filter, entryType: 'sale' }).lean();
+      assert.ok(original, 'original sale journal exists');
+      const facts = (lines) => lines.map(({ account, unit, debit, credit }) => ({ account, unit, debit, credit }));
+      const originalFacts = facts(original.lines);
+      assert.equal(await stockOf(p._id), 0);
+      const cancelled = await t.manager.del(`/api/sales/${sale._id}`);
+      assert.equal(cancelled.status, 200, JSON.stringify(cancelled.body));
+      const reversal = await LedgerEntry.findOne({ ...filter, entryType: 'sale_cancel' }).lean();
+      const preserved = await LedgerEntry.findOne({ _id: original._id, businessId: t.businessId }).lean();
+      assert.ok(reversal, 'a separate cancellation journal exists');
+      assert.deepEqual(facts(preserved.lines), originalFacts, 'posted entry lines remain unchanged');
+      assert.equal(String(reversal.reversalOf), String(original._id));
+      assert.equal(String(preserved.reversedBy), String(reversal._id));
+      assert.deepEqual(facts(reversal.lines), originalFacts.map(({ account, unit, debit, credit }) => ({
+        account, unit, debit: credit, credit: debit,
+      })), 'reversal mirrors every original debit and credit');
+      assert.equal(await LedgerEntry.countDocuments({ ...filter, entryType: 'sale_cancel' }), 1);
+      assert.equal(await StockMovement.countDocuments({
+        businessId: t.businessId, productId: p._id, movementType: 'sale_cancel',
+      }), 1, 'cancelled stock is restored once');
+      assert.equal(await stockOf(p._id), 1);
+      assert.equal((await t.manager.del(`/api/sales/${sale._id}`)).status, 409);
+      assert.equal(await LedgerEntry.countDocuments({ ...filter, entryType: 'sale_cancel' }), 1);
+      const bal = await balances(t.admin);
+      assert.equal(bal(`ar:${c._id}`), 0);
+      assert.equal(bal('revenue:sales'), 0);
+      assert.equal(bal('cogs'), 0);
+      await assertReconciled(t.admin, 'F4 append-only cancellation');
+    });
+
+    it('Bahar STAR IR-01 F3: counter-trades keep supplier and customer obligations separate', async () => {
+      const t = await tenant();
+      // Synthetic pair tied by one stock item, NOT an explicit broker-link contract.
+      // Buy 2 at 300.00 TRY each = 600.00 payable; sell 1 at 500.00 TRY
+      // = 500.00 receivable, 300.00 COGS, 1 unit remaining. NOT IRR.
+      const p = await product(t.admin, { name: 'Synthetic F3 paired stock', price: '500.00', stock: 0 });
+      const s = await supplier(t.admin);
+      const c = await customer(t.admin);
+      const purchase = await mustCreate(await t.manager.post('/api/purchases', {
+        supplierId: s._id, lines: [{ productId: p._id, quantity: 2, unitCost: '300.00' }], payments: [],
+      }), 'F3 supplier purchase');
+      const sale = await mustCreate(await t.staff.post('/api/sales', {
+        customerId: c._id, lines: [{ productId: p._id, quantity: 1 }], payments: [],
+      }), 'F3 customer sale');
+      assert.equal(String(purchase.supplierId?._id ?? purchase.supplierId), String(s._id));
+      assert.equal(String(sale.customerId?._id ?? sale.customerId), String(c._id));
+      assert.equal(purchase.total, 600);
+      assert.equal(purchase.remaining, 600);
+      assert.equal(sale.financial.total, 500);
+      assert.equal(sale.financial.balanceDue, 500);
+      const buyJournal = await LedgerEntry.findOne({
+        businessId: t.businessId, entryType: 'purchase', 'reference.id': String(purchase._id),
+      }).lean();
+      const sellJournal = await LedgerEntry.findOne({
+        businessId: t.businessId, entryType: 'sale', 'reference.id': String(sale._id),
+      }).lean();
+      assert.ok(buyJournal && sellJournal, 'two separately referenced posted journals');
+      assert.notEqual(String(buyJournal._id), String(sellJournal._id));
+      assert.equal(buyJournal.reference.kind, 'Purchase');
+      assert.equal(sellJournal.reference.kind, 'Sale');
+      const bal = await balances(t.admin);
+      assert.equal(bal(`ap:${s._id}`), -600, 'supplier payable is not customer receivable');
+      assert.equal(bal(`ar:${c._id}`), 500, 'buyer still owes 500 TRY');
+      assert.equal(bal('revenue:sales'), -500);
+      assert.equal(bal('cogs'), 300);
+      assert.equal(await stockOf(p._id), 1);
+      assert.equal(await StockMovement.countDocuments({
+        businessId: t.businessId, productId: p._id, movementType: 'purchase',
+      }), 1);
+      assert.equal(await StockMovement.countDocuments({
+        businessId: t.businessId, productId: p._id, movementType: 'sale',
+      }), 1);
+      await assertReconciled(t.admin, 'F3 separate customer and supplier counter-trades');
+    });
+
     it('multi-line gram + fixed sale: exact prices, discounts, split partial payment, stock, COGS, receivable, collection', async () => {
       const t = await tenant();
       const bilezik = await product(t.admin, {
@@ -460,6 +656,91 @@ describe('Financial core (real MongoDB, HTTP)', { skip: !uri && 'MONGO_URI not s
 
   // ===================================================================
   describe('Purchases and suppliers', () => {
+    it('Bahar STAR IR-01 F1: purchase payable clears only on two recorded partial transfers', async () => {
+      // TRY-only proxy of #35 F1: 10.000 g 18K at 50.00 TRY/g = 500.00 TRY.
+      // A payment instruction at T1 is NOT a bank settlement or an API event.
+      // The existing engine does NOT authenticate bank confirmation at T2/T3;
+      // this test proves payable arithmetic/posting only, not bank verification.
+      const t = await tenant();
+      const s = await supplier(t.admin);
+      const purchase = await mustCreate(await t.manager.post('/api/purchases', {
+        supplierId: s._id,
+        lines: [{ metal: 'XAU', karat: 18, weightGrams: '10.000', totalCost: '500.00' }],
+        payments: [],
+      }), 'F1 T0 purchase obligation');
+      const ref = { businessId: t.businessId, 'reference.id': String(purchase._id) };
+      const poolAtT0 = await t.manager.get('/api/inventory/metal');
+      assert.equal(poolAtT0.status, 200);
+      assert.deepEqual(poolAtT0.body.map((p) => [p.purity, p.weightGrams, p.fineGrams]), [[7500, 10, 7.5]]);
+      assert.equal(purchase.total, 500);
+      assert.equal(purchase.paid, 0);
+      assert.equal(purchase.remaining, 500);
+      assert.equal(purchase.paymentStatus, 'unpaid');
+      assert.equal(await LedgerEntry.countDocuments({ ...ref, entryType: 'purchase' }), 1);
+      assert.equal(await LedgerEntry.countDocuments({ ...ref, entryType: 'supplier_payment' }), 0);
+      // T1: an external transfer instruction has not been booked in Jeweler Pro.
+      const atT1 = await t.manager.get(`/api/purchases/${purchase._id}`);
+      assert.equal(atT1.body.remaining, 500);
+      assert.equal((await balances(t.admin))(`ap:${s._id}`), -500);
+      // T2/T3: simulate the bookkeeping AFTER assumed external confirmation.
+      // This API does not verify a bank statement; separate F2 remains red.
+      const first = await t.manager.post(`/api/purchases/${purchase._id}/payments`, { method: 'havale', amount: '300.00' });
+      assert.equal(first.status, 200, JSON.stringify(first.body));
+      assert.equal(first.body.paymentStatus, 'partial');
+      assert.equal(first.body.remaining, 200);
+      assert.equal(await LedgerEntry.countDocuments({ ...ref, entryType: 'supplier_payment' }), 1);
+      assert.equal((await balances(t.admin))(`ap:${s._id}`), -200);
+      const second = await t.manager.post(`/api/purchases/${purchase._id}/payments`, { method: 'havale', amount: '200.00' });
+      assert.equal(second.status, 200, JSON.stringify(second.body));
+      assert.equal(second.body.paymentStatus, 'paid');
+      assert.equal(second.body.remaining, 0);
+      assert.equal(await LedgerEntry.countDocuments({ ...ref, entryType: 'supplier_payment' }), 2);
+      assert.equal((await balances(t.admin))(`ap:${s._id}`), 0);
+      assert.equal((await balances(t.admin))(`bank:${BRANCH}:transfer`), -500);
+      const poolAtT3 = await t.manager.get('/api/inventory/metal');
+      assert.deepEqual(poolAtT3.body.map((p) => [p.purity, p.weightGrams, p.fineGrams]), [[7500, 10, 7.5]]);
+      await assertReconciled(t.admin, 'F1 partial purchase transfer bookkeeping');
+    });
+
+    it('Bahar STAR IR-01 F2 purchase: unverified transfer must leave supplier payable open', async () => {
+      // Synthetic TRY-native inverse of F2 sale: a screenshot is NOT bank evidence.
+      // 10.000 g of 18K = 7.500 g fine, purchase obligation = 500.00 TRY.
+      // Expected independent state after a rejected unconfirmed payment:
+      // payable -500.00, no bank transfer posting, metal pool unchanged.
+      const t = await tenant();
+      const s = await supplier(t.admin);
+      const purchase = await mustCreate(await t.manager.post('/api/purchases', {
+        supplierId: s._id,
+        lines: [{ metal: 'XAU', karat: 18, weightGrams: '10.000', totalCost: '500.00' }],
+        payments: [],
+      }), 'F2 supplier payable');
+      const attempted = await t.manager.post(`/api/purchases/${purchase._id}/payments`, {
+        method: 'havale', amount: '500.00',
+        receiptScreenshot: 'synthetic-unverified-instruction', bankConfirmed: false,
+      });
+      const stored = (await t.manager.get(`/api/purchases/${purchase._id}`)).body;
+      const bal = await balances(t.admin);
+      const paymentJournals = await LedgerEntry.countDocuments({
+        businessId: t.businessId, entryType: 'supplier_payment', 'reference.id': String(purchase._id),
+      });
+      const pool = (await t.manager.get('/api/inventory/metal')).body;
+      await assertReconciled(t.admin, 'F2 unverified supplier transfer');
+      assert.deepEqual({
+        remainingTry: stored.remaining,
+        paymentStatus: stored.paymentStatus,
+        payableTry: bal(`ap:${s._id}`),
+        bankTransferTry: bal(`bank:${BRANCH}:transfer`),
+        paymentJournals,
+        metal: pool.map((x) => [x.purity, x.weightGrams, x.fineGrams]),
+      }, {
+        remainingTry: 500, paymentStatus: 'unpaid',
+        payableTry: -500, bankTransferTry: 0, paymentJournals: 0,
+        metal: [[7500, 10, 7.5]],
+      }, 'unconfirmed transfer must not close supplier liability');
+      assert.ok([400, 409].includes(attempted.status),
+        `unconfirmed supplier transfer must fail closed, received ${attempted.status}`);
+    });
+
     it('purchase → stock & metal pool → supplier payable → payments (direct and FIFO voucher); cancellation rules', async () => {
       const t = await tenant();
       const s = await supplier(t.admin);
