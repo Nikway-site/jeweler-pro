@@ -4,11 +4,11 @@ const P = (tr: string, en: string, de: string, fr: string, es: string, ru: strin
 
 // [tr, en, de, fr, es, ru, ar, zh]
 export default defineMessages({
-  alimStokVeMuhasebe: P('Alım, stok ve muhasebe', 'Purchasing, stock & accounting', 'Einkauf, Bestand & Buchhaltung', 'Achats, stock & comptabilité', 'Compras, stock y contabilidad', 'Закупки, склад и учёт', 'المشتريات والمخزون والمحاسبة', '采购、库存与会计'),
-  alimFinans: P('Alım ve finans', 'Purchasing & finance', 'Einkauf & Finanzen', 'Achats & finance', 'Compras y finanzas', 'Закупки и финансы', 'المشتريات والمالية', '采购与财务'),
+  alimStokVeMuhasebe: P('Alım, stok ve muhasebe', 'Purchasing, stock & accounting', 'Einkauf, Bestand & Buchhaltung', 'Achats, stock & comptabilité', 'Compras, stock y contabilidad', 'Закупки, склад и учёт', 'المشتريات والمخزون والمحاسبة', '采购、库存与会计', 'خرید، موجودی و حسابداری'),
+  alimFinans: P('Alım ve finans', 'Purchasing & finance', 'Einkauf & Finanzen', 'Achats & finance', 'Compras y finanzas', 'Закупки и финансы', 'المشتريات والمالية', '采购与财务', 'خرید و امور مالی'),
   p0TedarikciToplamBorcP1: P('{p0} tedarikçi · toplam borç {p1}', '{p0} suppliers · total payable {p1}', '{p0} Lieferanten · Verbindlichkeiten {p1}', '{p0} fournisseurs · dettes {p1}', '{p0} proveedores · deuda total {p1}', 'Поставщиков: {p0} · долг {p1}', '{p0} مورد · إجمالي المستحق {p1}', '{p0} 家供应商 · 应付合计 {p1}', '{p0} تأمین‌کننده · مجموع بدهی {p1}'),
-  tedarikciEkle: P('Tedarikçi Ekle', 'Add supplier', 'Lieferant hinzufügen', 'Ajouter un fournisseur', 'Añadir proveedor', 'Добавить поставщика', 'إضافة مورد', '添加供应商'),
-  tedarikci: P('Tedarikçi', 'Supplier', 'Lieferant', 'Fournisseur', 'Proveedor', 'Поставщик', 'المورد', '供应商'),
+  tedarikciEkle: P('Tedarikçi Ekle', 'Add supplier', 'Lieferant hinzufügen', 'Ajouter un fournisseur', 'Añadir proveedor', 'Добавить поставщика', 'إضافة مورد', '添加供应商', 'افزودن تأمین‌کننده'),
+  tedarikci: P('Tedarikçi', 'Supplier', 'Lieferant', 'Fournisseur', 'Proveedor', 'Поставщик', 'المورد', '供应商', 'تأمین‌کننده'),
   tedarikci2: P('Tedarikçi *', 'Supplier *', 'Lieferant *', 'Fournisseur *', 'Proveedor *', 'Поставщик *', 'المورد *', '供应商 *'),
   telefon: P('Telefon', 'Phone', 'Telefon', 'Téléphone', 'Teléfono', 'Телефон', 'الهاتف', '电话'),
   telefon2: P('Telefon', 'Phone', 'Telefon', 'Téléphone', 'Teléfono', 'Телефон', 'الهاتف', '电话'),
@@ -104,8 +104,8 @@ export default defineMessages({
   iptalEdilemediP0: P('İptal edilemedi: {p0}', 'Could not cancel: {p0}', 'Storno fehlgeschlagen: {p0}', 'Annulation impossible : {p0}', 'No se pudo cancelar: {p0}', 'Не удалось отменить: {p0}', 'تعذر الإلغاء: {p0}', '取消失败：{p0}'),
   verilerYuklenemediP0: P('Veriler yüklenemedi: {p0}', 'Data could not be loaded: {p0}', 'Daten konnten nicht geladen werden: {p0}', 'Impossible de charger les données : {p0}', 'No se pudieron cargar los datos: {p0}', 'Не удалось загрузить данные: {p0}', 'تعذر تحميل البيانات: {p0}', '数据加载失败：{p0}'),
   tedarikciler: P('Tedarikçiler', 'Suppliers', 'Lieferanten', 'Fournisseurs', 'Proveedores', 'Поставщики', 'الموردون', '供应商'),
-  alislar: P('Alışlar', 'Purchases', 'Einkäufe', 'Achats', 'Compras', 'Закупки', 'المشتريات', '采购'),
-  stokHareketleri: P('Stok hareketleri', 'Stock movements', 'Bestandsbewegungen', 'Mouvements de stock', 'Movimientos de stock', 'Движения запасов', 'حركات المخزون', '库存变动'),
+  alislar: P('Alışlar', 'Purchases', 'Einkäufe', 'Achats', 'Compras', 'Закупки', 'المشتريات', '采购', 'خریدها'),
+  stokHareketleri: P('Stok hareketleri', 'Stock movements', 'Bestandsbewegungen', 'Mouvements de stock', 'Movimientos de stock', 'Движения запасов', 'حركات المخزون', '库存变动', 'گردش موجودی'),
   muhasebeMutabakat: P('Muhasebe ve mutabakat', 'Accounting & reconciliation', 'Buchhaltung & Abstimmung', 'Comptabilité & rapprochement', 'Contabilidad y conciliación', 'Учёт и сверка', 'المحاسبة والمطابقة', '会计与对账'),
   alisP0Odemesi: P('Alış #{p0} ödemesi', 'Payment for purchase #{p0}', 'Zahlung für Einkauf #{p0}', 'Paiement de l’achat n° {p0}', 'Pago de la compra n.º {p0}', 'Оплата закупки № {p0}', 'دفعة الشراء رقم {p0}', '采购 #{p0} 付款'),
   p0CariOdeme: P('{p0} · cari ödeme', '{p0} · account payment', '{p0} · Kontozahlung', '{p0} · paiement sur compte', '{p0} · pago en cuenta', '{p0} · оплата по счёту', '{p0} · دفعة على الحساب', '{p0} · 往来付款'),
