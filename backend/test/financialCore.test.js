@@ -702,6 +702,45 @@ describe('Financial core (real MongoDB, HTTP)', { skip: !uri && 'MONGO_URI not s
       await assertReconciled(t.admin, 'F1 partial purchase transfer bookkeeping');
     });
 
+    it('Bahar STAR IR-01 F2 purchase: unverified transfer must leave supplier payable open', async () => {
+      // Synthetic TRY-native inverse of F2 sale: a screenshot is NOT bank evidence.
+      // 10.000 g of 18K = 7.500 g fine, purchase obligation = 500.00 TRY.
+      // Expected independent state after a rejected unconfirmed payment:
+      // payable -500.00, no bank transfer posting, metal pool unchanged.
+      const t = await tenant();
+      const s = await supplier(t.admin);
+      const purchase = await mustCreate(await t.manager.post('/api/purchases', {
+        supplierId: s._id,
+        lines: [{ metal: 'XAU', karat: 18, weightGrams: '10.000', totalCost: '500.00' }],
+        payments: [],
+      }), 'F2 supplier payable');
+      const attempted = await t.manager.post(`/api/purchases/${purchase._id}/payments`, {
+        method: 'havale', amount: '500.00',
+        receiptScreenshot: 'synthetic-unverified-instruction', bankConfirmed: false,
+      });
+      const stored = (await t.manager.get(`/api/purchases/${purchase._id}`)).body;
+      const bal = await balances(t.admin);
+      const paymentJournals = await LedgerEntry.countDocuments({
+        businessId: t.businessId, entryType: 'supplier_payment', 'reference.id': String(purchase._id),
+      });
+      const pool = (await t.manager.get('/api/inventory/metal')).body;
+      await assertReconciled(t.admin, 'F2 unverified supplier transfer');
+      assert.deepEqual({
+        remainingTry: stored.remaining,
+        paymentStatus: stored.paymentStatus,
+        payableTry: bal(`ap:${s._id}`),
+        bankTransferTry: bal(`bank:${BRANCH}:transfer`),
+        paymentJournals,
+        metal: pool.map((x) => [x.purity, x.weightGrams, x.fineGrams]),
+      }, {
+        remainingTry: 500, paymentStatus: 'unpaid',
+        payableTry: -500, bankTransferTry: 0, paymentJournals: 0,
+        metal: [[7500, 10, 7.5]],
+      }, 'unconfirmed transfer must not close supplier liability');
+      assert.ok([400, 409].includes(attempted.status),
+        `unconfirmed supplier transfer must fail closed, received ${attempted.status}`);
+    });
+
     it('purchase → stock & metal pool → supplier payable → payments (direct and FIFO voucher); cancellation rules', async () => {
       const t = await tenant();
       const s = await supplier(t.admin);
