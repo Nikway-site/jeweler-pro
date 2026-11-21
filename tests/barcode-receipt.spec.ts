@@ -94,6 +94,29 @@ describe('receipt', () => {
     expect(html).not.toContain('<script>x</script>');
     expect(html).toContain('&lt;script&gt;');
   });
+  it('IR-02: previews Persian RTL receipt and isolates synthetic TRY values', () => {
+    // HTML contract only: not a browser-print screenshot or activated fa-IR locale.
+    const persian = { ...labels, title: 'رسید آزمایشی', total: 'جمع کل', notInvoice: 'این رسید فاکتور رسمی نیست' };
+    const moneyOnlyTry = { money: (v: number) => `${v.toFixed(2)} TRY`, date: () => '2026-11-22', number: (v: number) => String(v) };
+    const sale = {
+      _id: 'TEST-001', date: '2026-11-22', customerName: 'مشتری آزمایشی',
+      lines: [{ productName: 'طلای ۱۸ عیار', quantity: 1, total: 123456.78 }],
+      financial: { total: 123456.78, paid: 0, balanceDue: 123456.78 },
+    };
+    const profile = { companyName: 'زرگری آزمایشی' };
+    const html = buildReceiptHtml(sale, profile, persian, moneyOnlyTry, { direction: 'rtl' });
+    expect(html).toContain('<html dir="rtl">');
+    expect(html).toContain('زرگری آزمایشی');
+    expect(html).toContain('جمع کل');
+    expect(html).toContain('<bdi dir="ltr">123456.78 TRY</bdi>');
+    expect(html).toContain('<bdi dir="ltr">2026-11-22</bdi>');
+    expect(html).toContain('<bdi dir="ltr">TEST-001</bdi>');
+    expect(html).not.toContain('IRR');
+    const defaultHtml = buildReceiptHtml(sale, profile, persian, moneyOnlyTry);
+    expect(defaultHtml).toContain('<html><head>');
+    expect(defaultHtml).not.toContain('<bdi');
+  });
+
 });
 
 describe('product labels', async () => {
