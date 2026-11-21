@@ -113,6 +113,29 @@ describe('language engine', () => {
     expect(money(100)).not.toMatch(/\$/);
   });
 
+  it('IR-02: blocks selecting fa before its complete catalog is available', () => {
+    setI18nPreferences({ language: 'en' });
+    expect(LANGUAGES).not.toContain('fa');
+    // An unsupported language must not activate a partial Turkish fallback.
+    setI18nPreferences({ language: 'fa' as Language });
+    expect(i18nState.language).toBe('en');
+    expect(document.documentElement.lang).toBe('en');
+    expect(document.documentElement.dir).toBe('ltr');
+  });
+
+  it('IR-02: RTL display does not relabel TRY amounts as IRR', () => {
+    setI18nPreferences({ language: 'ar', numberFormat: 'western' });
+    expect(document.documentElement.dir).toBe('rtl');
+    const tryAmount = money(500000000, 'TRY', { currencyDisplay: 'code' });
+    const irrAmount = money(500000000, 'IRR', { currencyDisplay: 'code' });
+    expect(tryAmount).toMatch(/500,000,000\.00/);
+    expect(irrAmount).toMatch(/500,000,000\.00/);
+    expect(tryAmount).toContain('TRY');
+    expect(tryAmount).not.toContain('IRR');
+    expect(irrAmount).toContain('IRR');
+    expect(irrAmount).not.toContain('TRY');
+  });
+
   it('translates enum labels reactively at read time', () => {
     setI18nPreferences({ language: 'tr' });
     expect(PAYMENT_STATUS_LABELS.paid).toBe('Ödendi');
