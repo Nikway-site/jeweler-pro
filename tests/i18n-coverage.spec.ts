@@ -13,6 +13,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { messageTree } from '@/i18n/messages';
 import * as coreMessages from '@/i18n/messages/core';
+import ledgerMessages from '@/i18n/messages/pages/ledger';
 import { LANGUAGES } from '@/i18n/languages';
 import { lookup, lookupNode } from '@/i18n';
 import { project } from '@/i18n/messages/define';
@@ -99,6 +100,19 @@ describe('message catalog', () => {
     const missing = coreEntries.filter(([, values]) => values.length !== 9 || !/[\u0600-\u06FF]/u.test(values[8] ?? ''));
     expect(missing.map(([key]) => key)).toEqual([]);
     // Translation completeness alone does not authorize a runtime locale switch.
+    expect(LANGUAGES).not.toContain('fa');
+  });
+
+  it('IR-02: guards all 36 staged Persian ledger entry labels', () => {
+    const ledgerEntries = flatten(ledgerMessages as unknown as Tree);
+    expect(ledgerEntries).toHaveLength(36);
+    const invalid = ledgerEntries
+      .filter(([, values]) => values.length !== 9
+        || !/[\u0600-\u06FF]/u.test(values[8] ?? '')
+        || placeholders(values[8] ?? '') !== placeholders(values[0]))
+      .map(([key]) => key);
+    expect(invalid).toEqual([]);
+    // Partial Persian translations must not silently enable a runtime locale.
     expect(LANGUAGES).not.toContain('fa');
   });
 
