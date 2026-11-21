@@ -1,16 +1,16 @@
 import { defineMessages } from '../define';
 
-const P = (tr: string, en: string, de: string, fr: string, es: string, ru: string, ar: string, zh: string) => [tr, en, de, fr, es, ru, ar, zh] as const;
+const P = (tr: string, en: string, de: string, fr: string, es: string, ru: string, ar: string, zh: string, fa?: string) => fa === undefined ? [tr, en, de, fr, es, ru, ar, zh] as const : [tr, en, de, fr, es, ru, ar, zh, fa] as const;
 
 /** Ledger / statement entry types returned by the API as `type` codes. */
 export default defineMessages({
   entry: {
-    sale: P('Satış', 'Sale', 'Verkauf', 'Vente', 'Venta', 'Продажа', 'بيع', '销售'),
-    sale_cancel: P('Satış iptali', 'Sale cancellation', 'Verkaufsstorno', 'Annulation de vente', 'Cancelación de venta', 'Отмена продажи', 'إلغاء بيع', '销售取消'),
-    sale_payment: P('Satış tahsilatı', 'Sale payment', 'Verkaufszahlung', 'Paiement de vente', 'Cobro de venta', 'Оплата продажи', 'تحصيل بيع', '销售收款'),
-    sale_collection: P('Satış tahsilatı', 'Sale collection', 'Verkaufseinzug', 'Encaissement de vente', 'Cobro de venta', 'Поступление по продаже', 'تحصيل مبيعات', '销售收款'),
-    sale_refund: P('Satış iadesi (ödeme)', 'Sale refund', 'Verkaufserstattung', 'Remboursement de vente', 'Reembolso de venta', 'Возврат оплаты', 'استرداد بيع', '销售退款'),
-    sale_return: P('Satış iadesi', 'Sale return', 'Verkaufsretoure', 'Retour de vente', 'Devolución de venta', 'Возврат товара', 'مرتجع بيع', '销售退货'),
+    sale: P('Satış', 'Sale', 'Verkauf', 'Vente', 'Venta', 'Продажа', 'بيع', '销售', 'فروش'),
+    sale_cancel: P('Satış iptali', 'Sale cancellation', 'Verkaufsstorno', 'Annulation de vente', 'Cancelación de venta', 'Отмена продажи', 'إلغاء بيع', '销售取消', 'لغو فروش'),
+    sale_payment: P('Satış tahsilatı', 'Sale payment', 'Verkaufszahlung', 'Paiement de vente', 'Cobro de venta', 'Оплата продажи', 'تحصيل بيع', '销售收款', 'دریافت وجه فروش'),
+    sale_collection: P('Satış tahsilatı', 'Sale collection', 'Verkaufseinzug', 'Encaissement de vente', 'Cobro de venta', 'Поступление по продаже', 'تحصيل مبيعات', '销售收款', 'دریافت بابت فروش'),
+    sale_refund: P('Satış iadesi (ödeme)', 'Sale refund', 'Verkaufserstattung', 'Remboursement de vente', 'Reembolso de venta', 'Возврат оплаты', 'استرداد بيع', '销售退款', 'استرداد وجه فروش'),
+    sale_return: P('Satış iadesi', 'Sale return', 'Verkaufsretoure', 'Retour de vente', 'Devolución de venta', 'Возврат товара', 'مرتجع بيع', '销售退货', 'مرجوعی فروش'),
     customer_payment: P('Cari tahsilat / ödeme', 'Account payment', 'Kontozahlung', 'Paiement sur compte', 'Pago en cuenta', 'Оплата по счёту', 'دفعة على الحساب', '往来收付款'),
     customer_opening: P('Müşteri devir bakiyesi', 'Customer opening balance', 'Kunden-Eröffnungssaldo', 'Solde d’ouverture client', 'Saldo inicial del cliente', 'Начальное сальдо клиента', 'رصيد افتتاحي للعميل', '客户期初余额'),
     supplier_opening: P('Tedarikçi devir bakiyesi', 'Supplier opening balance', 'Lieferanten-Eröffnungssaldo', 'Solde d’ouverture fournisseur', 'Saldo inicial del proveedor', 'Начальное сальдо поставщика', 'رصيد افتتاحي للمورد', '供应商期初余额'),
