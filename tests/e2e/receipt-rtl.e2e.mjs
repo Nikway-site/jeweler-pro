@@ -51,6 +51,29 @@ try {
       const r = el.getBoundingClientRect();
       return r.left < -1 || r.right > viewport + 1;
     });
+    // Range geometry checks actual Persian text, not full-width block boxes.
+    // This is a provisional 4-CSS-px browser edge guard, not a print-margin certificate.
+    const persianTextBounds = [];
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      const text = node.textContent?.trim() || '';
+      if (!/[\u0600-\u06ff]/u.test(text)) continue;
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      for (const rect of range.getClientRects()) {
+        if (!rect.width || !rect.height) continue;
+        persianTextBounds.push({
+          text: text.slice(0, 60),
+          left: Number(rect.left.toFixed(2)),
+          right: Number(rect.right.toFixed(2)),
+          marginLeft: Number(rect.left.toFixed(2)),
+          marginRight: Number((viewport - rect.right).toFixed(2)),
+        });
+      }
+    }
+    const persianEdgeFailures = persianTextBounds.filter(
+      (r) => r.marginLeft < 4 || r.marginRight < 4,
+    );
     return {
       htmlDir: document.documentElement.dir,
       bodyDirection: getComputedStyle(document.body).direction,
@@ -59,6 +82,8 @@ try {
       scrollWidth: document.documentElement.scrollWidth,
       isolatedValues: amounts.map((el) => el.textContent),
       clipped,
+      persianTextBounds,
+      persianEdgeFailures,
     };
   });
   assert.equal(snapshot.htmlDir, 'rtl');
@@ -76,6 +101,11 @@ try {
   await page.screenshot({ path: path.join(out, 'ir02-rtl-receipt-80mm.png'), fullPage: true });
   fs.writeFileSync(path.join(out, 'ir02-rtl-receipt-80mm.pdf'), pdf);
   fs.writeFileSync(path.join(out, 'ir02-rtl-receipt-check.json'), JSON.stringify(snapshot, null, 2));
+  // Save the synthetic screenshot/PDF/measurements before a red margin assertion.
+  assert.ok(snapshot.persianTextBounds.length >= 4, 'Persian labels/metadata must be measured');
+  assert.deepEqual(snapshot.persianEdgeFailures, [],
+    'Persian text must clear both 80-mm browser viewport edges by at least 4 CSS px: ' +
+    JSON.stringify(snapshot.persianEdgeFailures.slice(0, 6)));
   console.log('[IR-02] Synthetic RTL receipt browser/80-mm print preflight PASS (not a physical printer or font-glyph certification)');
 } finally {
   await browser?.close();
