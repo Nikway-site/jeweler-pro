@@ -80,6 +80,7 @@ export function buildReceiptHtml(sale: SaleLike, profile: Partial<BusinessProfil
 <style>
   @page { size: 80mm auto; margin: 4mm; }
   body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-size: 12px; color: #000; margin: 0; }
+  html[dir="rtl"] body { padding-inline: 6px; } /* Keep opt-in RTL text away from 80-mm print edges. */
   .center { text-align: center; } .company { font-size: 15px; font-weight: 700; }
   table { width: 100%; border-collapse: collapse; } td { padding: 2px 0; vertical-align: top; }
   .r { text-align: right; white-space: nowrap; } html[dir="rtl"] .r { text-align: left; } .muted { color: #555; font-size: 11px; }
