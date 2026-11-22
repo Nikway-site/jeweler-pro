@@ -106,6 +106,37 @@ try {
   assert.deepEqual(snapshot.persianEdgeFailures, [],
     'Persian text must clear both 80-mm browser viewport edges by at least 4 CSS px: ' +
     JSON.stringify(snapshot.persianEdgeFailures.slice(0, 6)));
+  // Negative control: the released/default receipt must stay LTR and keep TRY amounts right-aligned.
+  // This does NOT assert activation of the staged fa-IR locale or Iranian currency support.
+  const ltrHtml = buildReceiptHtml({
+    _id: 'TEST-LTR-001', date: '2026-11-22', customerName: 'Synthetic customer',
+    lines: [{ productName: 'Synthetic item', quantity: 1, total: 123456.78 }],
+    financial: { total: 123456.78, paid: 0, balanceDue: 123456.78 },
+  }, { companyName: 'Synthetic store' }, labels, fmt);
+  const ltrPage = await browser.newPage({ viewport: { width: 302, height: 900 } });
+  try {
+    await ltrPage.setContent(ltrHtml);
+    await ltrPage.emulateMedia({ media: 'print' });
+    const ltr = await ltrPage.evaluate(() => ({
+      direction: getComputedStyle(document.body).direction,
+      moneyAlignment: getComputedStyle(document.querySelector('.r')).textAlign,
+      inlinePadding: getComputedStyle(document.body).paddingInlineStart,
+      isolatedCount: document.querySelectorAll('bdi[dir="ltr"]').length,
+      scrollWidth: document.documentElement.scrollWidth,
+      viewport: document.documentElement.clientWidth,
+      text: document.body.textContent,
+    }));
+    assert.equal(ltr.direction, 'ltr', 'default receipt must remain LTR');
+    assert.equal(ltr.moneyAlignment, 'right', 'default TRY amount column must remain right-aligned');
+    assert.equal(ltr.inlinePadding, '0px', 'RTL-only inset must not affect default receipts');
+    assert.equal(ltr.isolatedCount, 0, 'default receipt must not gain RTL-specific bdi tags');
+    assert.ok(ltr.text.includes('123456.78 TRY'), 'synthetic TRY total must be visible');
+    assert.ok(ltr.scrollWidth <= ltr.viewport + 1, 'default 80-mm receipt must not overflow');
+  } finally {
+    await ltrPage.close();
+  }
+  console.log('[IR-02] Default LTR/TRY receipt negative control PASS (not fa-IR activation)');
+
   console.log('[IR-02] Synthetic RTL receipt browser/80-mm print preflight PASS (not a physical printer or font-glyph certification)');
 } finally {
   await browser?.close();
